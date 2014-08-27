@@ -154,7 +154,7 @@ RET=$?; if [[ $RET -ne 0 ]]; then
 fi
 
 # verify this is a device, not just a file
-# `true` is so that a failure to unmount doesn't cause entire script to exit prematurely
+# `true` is so that a failure here doesn't cause entire script to exit prematurely
 mount /dev/$DEVICE 2>/dev/null || true
 (test -b /dev/$DEVICE) || (echo "[-] <device> either doesn't exists or is not block special" >&2 && false)
 # TODO not sure why the following is required on bash 3.2.51(1) on OS X (doesn't exit with `false` even with 'set -e')
@@ -222,10 +222,10 @@ fi
 
 echo "[+] Unmounting drive..."
 if [[ $TOOL_UNMOUNT = $TOOL_UMOUNT ]]; then
-    # `true` is so that a failure to unmount doesn't cause entire script to exit prematurely
+    # `true` is so that a failure here doesn't cause entire script to exit prematurely
     sudo umount /dev/$DEVICE || true
 elif [[ $TOOL_UNMOUNT = $TOOL_DISKUTIL ]]; then
-    # `true` is so that a failure to unmount doesn't cause entire script to exit prematurely
+    # `true` is so that a failure here doesn't cause entire script to exit prematurely
     sudo diskutil unmount /dev/$DEVICE || true
 else
     echo "[-] Internal error 5" >&2
