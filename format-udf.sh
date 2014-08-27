@@ -4,7 +4,7 @@
 #
 # Bash script to format a block drive (hard drive or Flash drive) in UDF.  The output is a drive that can be used for reading/writing across multiple operating system families:  Windows, OS X, and Linux.  This script should be capable of running in OS X or in Linux.
 #
-# Version 1.0.0
+# Version 1.0.1
 #
 # Copyright (C) 2014 Jonathan Elchison <JElchison@gmail.com>
 #
@@ -193,24 +193,24 @@ fi
 ###############################################################################
 
 echo "[+] Detecting native sector size..."
-SECTOR_PATH=/sys/block/$DEVICE/queue/hw_sector_size
-if [[ -r $SECTOR_PATH ]]; then
-    SECTORSIZE=$(cat /sys/block/$DEVICE/queue/hw_sector_size)
+SECTOR_SIZE_PATH=/sys/block/$DEVICE/queue/hw_sector_size
+if [[ -r $SECTOR_SIZE_PATH ]]; then
+    SECTOR_SIZE=$(cat $SECTOR_SIZE_PATH)
 elif [[ -x $TOOL_DISKUTIL ]]; then
-    SECTORSIZE=$(diskutil info $DEVICE | grep -i 'Block Size' | awk -F ':' '{print $2}' | awk '{print $1}')
+    SECTOR_SIZE=$(diskutil info $DEVICE | grep -i 'Block Size' | awk -F ':' '{print $2}' | awk '{print $1}')
 else
     echo "[-] Cannot detect native sector size" >&2
     exit 1
 fi
 
-# validate that $SECTORSIZE is numeric > 0
+# validate that $SECTOR_SIZE is numeric > 0
 echo "[+] Validating detected sector size..."
-(echo "$SECTORSIZE" | egrep -q '^[0-9]+$') || (echo "[-] Could not detect valid sector size.  Exiting without changes to /dev/$DEVICE." >&2 && false)
+(echo "$SECTOR_SIZE" | egrep -q '^[0-9]+$') || (echo "[-] Could not detect valid sector size.  Exiting without changes to /dev/$DEVICE." >&2 && false)
 # TODO not sure why the following is required on bash 3.2.51(1) on OS X (doesn't exit with `false` even with 'set -e')
 RET=$?; if [[ $RET -ne 0 ]]; then
     exit $RET
 fi
-if [[ $SECTORSIZE -le 0 ]]; then
+if [[ $SECTOR_SIZE -le 0 ]]; then
     echo "[-] Could not detect valid sector size.  Exiting without changes to /dev/$DEVICE." >&2
     exit 1
 fi
@@ -238,8 +238,10 @@ fi
 ###############################################################################
 
 echo "[+] Zeroing out any existing partition table on drive..."
-# 4096 was arbitratily chosen to be "big enough" to delete first chunk of disk
-sudo dd if=/dev/zero of=/dev/$DEVICE bs=$SECTORSIZE count=4096
+# 4096 was arbitrarily chosen to be "big enough" to delete first chunk of disk
+sudo dd if=/dev/zero of=/dev/$DEVICE bs=$SECTOR_SIZE count=4096
+
+# TODO add capability to (optionally) zero entire drive (may take a long time)
 
 # no need to re-partition, UDF explicitly doesn't use a partition table.
 
@@ -256,7 +258,7 @@ if [[ $TOOL_UDF = $TOOL_MKUDFFS ]]; then
     # --vid        - volume identifier
     # --media-type - "hd" type covers both hard drives and USB drives
     # --utf8       - encode file names in UTF8
-    (sudo mkudffs --blocksize=$SECTORSIZE --udfrev=0x0201 --lvid="$LABEL" --vid="$LABEL" --media-type=hd --utf8 /dev/$DEVICE) || (echo "[-] Format failed!" >&2 && false)
+    (sudo mkudffs --blocksize=$SECTOR_SIZE --udfrev=0x0201 --lvid="$LABEL" --vid="$LABEL" --media-type=hd --utf8 /dev/$DEVICE) || (echo "[-] Format failed!" >&2 && false)
     # TODO not sure why the following is required on bash 3.2.51(1) on OS X (doesn't exit with `false` even with 'set -e')
     RET=$?; if [[ $RET -ne 0 ]]; then
         exit $RET
@@ -268,7 +270,7 @@ elif [[ $TOOL_UDF = $TOOL_NEWFS_UDF ]]; then
     # -r    - the udf revision to use.  2.01 is the latest revision available that supports writing in Linux.
     # -v    - volume identifier
     # --enc - encode volume name in UTF8
-    (sudo newfs_udf -b $SECTORSIZE -m blk -t ow -r 2.01 -v "$LABEL" --enc utf8 /dev/$DEVICE) || (echo "[-] Format failed!" >&2 && false)
+    (sudo newfs_udf -b $SECTOR_SIZE -m blk -t ow -r 2.01 -v "$LABEL" --enc utf8 /dev/$DEVICE) || (echo "[-] Format failed!" >&2 && false)
     # TODO not sure why the following is required on bash 3.2.51(1) on OS X (doesn't exit with `false` even with 'set -e')
     RET=$?; if [[ $RET -ne 0 ]]; then
         exit $RET
