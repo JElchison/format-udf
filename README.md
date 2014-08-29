@@ -19,15 +19,15 @@ Both read/write are supported unless otherwise listed below.
 
 Operating system			|Read-only				|Note
 ----------------------------------------|---------------------------------------|----------------------------------------
+Mac OS X 10.5/10.6/10.7/10.8/10.9	|					|
+Windows Vista, 7, 8			|					|Referred to by Microsoft as "Live File System"
+Windows XP, Server 2003			|Read-only				|Write support available with third party utilities.
+Linux 2.6/3.x				|Only for UDF revisions after 2.01	|
 AIX 5.2, 5.3, 6.1			|					|
 BeOS, magnussoft ZETA, Haiku		|					|
 DosBox					|					|
 eComStation, OS/2			|					|Additional fee drivers on OS/2
-Linux 2.6/3.x				|Only for UDF revisions after 2.01	|
-Mac OS X 10.5/10.6/10.7/10.8/10.9	|					|
 NetBSD 5.0				|					|
-Windows XP, Server 2003			|Read-only				|Write support available with third party utilities.
-Windows Vista, 7, 8			|					|Referred to by Microsoft as "Live File System"
 
 
 ### Supported with Third-Party Utilities
