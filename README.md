@@ -17,9 +17,9 @@ Bash script to format a block drive (hard drive or Flash drive) in UDF.  The out
 
 Both read/write are supported unless otherwise listed below.
 
-Operating system			|Read-only				|Note
+Operating System			|Read-only				|Note
 ----------------------------------------|---------------------------------------|----------------------------------------
-Mac OS X 10.5/10.6/10.7/10.8/10.9	|					|
+Mac OS X 10.5, 10.6, 10.7, 10.8, 10.9	|					|
 Windows Vista, 7, 8			|					|Referred to by Microsoft as "Live File System"
 Windows XP, Server 2003			|Read-only				|Write support available with third party utilities.
 Linux 2.6/3.x				|UDF revisions 2.01 and before have read/write.  After 2.01, read-only.	| 
@@ -32,7 +32,7 @@ NetBSD 5.0				|					|
 
 ### Supported with Third-Party Utilities
 
-Operating system			|Note
+Operating System			|Note
 ----------------------------------------|-----------------------------------
 Windows 95 OSR2+, 98, ME		|Such utilities include DLA and InCD
 Windows 2000				|
@@ -40,7 +40,7 @@ Windows 2000				|
 
 ### Not Supported
 
-Operating system			|Note
+Operating System			|Note
 ----------------------------------------|-------------------------------------------------
 DOS, FreeDOS, Windows 3.11 or older	|Filesystems that have an ISO9660 backward compatibility structure can be read
 
