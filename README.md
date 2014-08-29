@@ -11,6 +11,42 @@ Bash script to format a block drive (hard drive or Flash drive) in UDF.  The out
 * Runs on any OS having a Bash environment
 
 
+# OS Support
+
+## Natively Supported
+
+Both read/write are supported unless otherwise listed below.
+
+Operating system			|Read-only				|Note
+----------------------------------------|---------------------------------------|----------------------------------------
+AIX 5.2, 5.3, 6.1			|					|
+BeOS, magnussoft ZETA, Haiku		|					|
+DosBox					|					|
+eComStation, OS/2			|					|Additional fee drivers on OS/2
+Linux 2.6/3.x				|Only for UDF revisions after 2.01	|
+Mac OS X 10.5/10.6/10.7/10.8/10.9	|					|
+NetBSD 5.0				|					|
+Windows XP, Server 2003			|Read-only				|Write support available with third party utilities.
+Windows Vista, 7, 8			|					|Referred to by Microsoft as "Live File System"
+
+
+## Supported with Third-Party Utilities
+
+Operating system			|Note
+----------------------------------------|-----------------------------------
+Windows 95 OSR2+, 98, ME		|Such utilities include DLA and InCD
+Windows 2000				|
+
+
+## Not Supported
+
+Operating system			|Note
+----------------------------------------|-------------------------------------------------
+DOS, FreeDOS, Windows 3.11 or older	|Filesystems that have an ISO9660 backward compatibility structure can be read
+
+Data adapted from https://en.wikipedia.org/wiki/Universal_Disk_Format#Compatibility (as retrieved on 2014-Aug-28).
+
+
 # Environment
 * Any OS having a Bash environment
 * The following tools must be installed, executable, and in the PATH:
@@ -26,39 +62,6 @@ Bash script to format a block drive (hard drive or Flash drive) in UDF.  The out
     * *One* of the following:  lshw, diskutil
     * *One* of the following:  umount, diskutil
     * *One* of the following:  mkudffs, newfs_udf
-
-## OS Support
-
-### Natively Supported
-
-Operating system			|Read-only				|Note
-----------------------------------------|---------------------------------------|----------------------------------------
-AIX 5.2, 5.3, 6.1			|					|
-BeOS, magnussoft ZETA, Haiku		|					|
-DosBox					|					|
-eComStation, OS/2			|					|Additional fee drivers on OS/2
-Linux 2.6/3.x				|Only for UDF revisions after 2.01	|
-Mac OS X 10.5/10.6/10.7/10.8/10.9	|					|
-NetBSD 5.0				|					|
-Windows XP, Server 2003			|Read-only				|Write support available with third party utilities.
-Windows Vista, 7, 8			|					|Referred to by Microsoft as "Live File System"
-
-
-### Supported with Third-Party Utilities
-
-Operating system			|Note
-----------------------------------------|-----------------------------------
-Windows 95 OSR2+, 98, ME		|Such utilities include DLA and InCD
-Windows 2000				|
-
-
-### Not Supported
-
-Operating system			|Note
-----------------------------------------|-------------------------------------------------
-DOS, FreeDOS, Windows 3.11 or older	|Filesystems that have an ISO9660 backward compatibility structure can be read
-
-Data adapted from https://en.wikipedia.org/wiki/Universal_Disk_Format#Compatibility (as retrieved on 2014-Aug-28).
 
 
 # Prerequisites
