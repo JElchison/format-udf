@@ -6,7 +6,7 @@ Bash script to format a block drive (hard drive or Flash drive) in UDF.  The out
 
 # Features
 * Formats a block drive (hard drive or Flash drive) in <a href="https://en.wikipedia.org/wiki/Universal_Disk_Format">Universal Disk Format (UDF)</a>
-    * UDF 2.01 used for maximal compatibility
+    * UDF revision 2.01 used for maximal compatibility (see note on Linux support below)
 * Resulting file system can be read/written across multiple operating system families (Windows, OS X, and Linux)
 * Runs on any OS having a Bash environment
 
@@ -22,7 +22,7 @@ Operating system			|Read-only				|Note
 Mac OS X 10.5/10.6/10.7/10.8/10.9	|					|
 Windows Vista, 7, 8			|					|Referred to by Microsoft as "Live File System"
 Windows XP, Server 2003			|Read-only				|Write support available with third party utilities.
-Linux 2.6/3.x				|Only for UDF revisions after 2.01	|
+Linux 2.6/3.x				|UDF revisions 2.01 and before have read/write.  After 2.01, read-only.	| 
 AIX 5.2, 5.3, 6.1			|					|
 BeOS, magnussoft ZETA, Haiku		|					|
 DosBox					|					|
