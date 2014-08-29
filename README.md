@@ -13,6 +13,9 @@ Bash script to format a block drive (hard drive or Flash drive) in UDF.  The out
 
 # OS Support
 
+Following tables detail operating system support for UDF.  Data was adapted from https://en.wikipedia.org/wiki/Universal_Disk_Format#Compatibility (as retrieved on 2014-Aug-28).
+
+
 ### Natively Supported
 
 Both read/write are supported unless otherwise listed below.
@@ -43,8 +46,6 @@ Windows 2000				|
 Operating System			|Note
 ----------------------------------------|-------------------------------------------------
 DOS, FreeDOS, Windows 3.11 or older	|Filesystems that have an ISO9660 backward compatibility structure can be read
-
-Data adapted from https://en.wikipedia.org/wiki/Universal_Disk_Format#Compatibility (as retrieved on 2014-Aug-28).
 
 
 # Environment
