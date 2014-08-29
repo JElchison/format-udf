@@ -13,7 +13,7 @@ Bash script to format a block drive (hard drive or Flash drive) in UDF.  The out
 
 # OS Support
 
-## Natively Supported
+### Natively Supported
 
 Both read/write are supported unless otherwise listed below.
 
@@ -30,7 +30,7 @@ Windows XP, Server 2003			|Read-only				|Write support available with third part
 Windows Vista, 7, 8			|					|Referred to by Microsoft as "Live File System"
 
 
-## Supported with Third-Party Utilities
+### Supported with Third-Party Utilities
 
 Operating system			|Note
 ----------------------------------------|-----------------------------------
@@ -38,7 +38,7 @@ Windows 95 OSR2+, 98, ME		|Such utilities include DLA and InCD
 Windows 2000				|
 
 
-## Not Supported
+### Not Supported
 
 Operating system			|Note
 ----------------------------------------|-------------------------------------------------
