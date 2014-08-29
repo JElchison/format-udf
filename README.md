@@ -3,11 +3,13 @@ format-udf
 
 Bash script to format a block drive (hard drive or Flash drive) in UDF.  The output is a drive that can be used for reading/writing across multiple operating system families:  Windows, OS X, and Linux.  This script should be capable of running in OS X or in Linux.
 
+
 # Features
 * Formats a block drive (hard drive or Flash drive) in <a href="https://en.wikipedia.org/wiki/Universal_Disk_Format">Universal Disk Format (UDF)</a>
     * UDF 2.01 used for maximal compatibility
 * Resulting file system can be read/written across multiple operating system families (Windows, OS X, and Linux)
 * Runs on any OS having a Bash environment
+
 
 # Environment
 * Any OS having a Bash environment
@@ -25,15 +27,51 @@ Bash script to format a block drive (hard drive or Flash drive) in UDF.  The out
     * *One* of the following:  umount, diskutil
     * *One* of the following:  mkudffs, newfs_udf
 
-## Prerequisites
+## OS Support
+
+### Natively Supported
+
+Operating system			|Read-only				|Note
+----------------------------------------|---------------------------------------|----------------------------------------
+AIX 5.2, 5.3, 6.1			|					|
+BeOS, magnussoft ZETA, Haiku		|					|
+DosBox					|					|
+eComStation, OS/2			|					|Additional fee drivers on OS/2
+Linux 2.6/3.x				|Only for UDF revisions after 2.01	|
+Mac OS X 10.5/10.6/10.7/10.8/10.9	|					|
+NetBSD 5.0				|					|
+Windows XP, Server 2003			|Read-only				|Write support available with third party utilities.
+Windows Vista, 7, 8			|					|Referred to by Microsoft as "Live File System"
+
+
+### Supported with Third-Party Utilities
+
+Operating system			|Note
+----------------------------------------|-----------------------------------
+Windows 95 OSR2+, 98, ME		|Such utilities include DLA and InCD
+Windows 2000				|
+
+
+### Not Supported
+
+Operating system			|Note
+----------------------------------------|-------------------------------------------------
+DOS, FreeDOS, Windows 3.11 or older	|Filesystems that have an ISO9660 backward compatibility structure can be read
+
+Data adapted from https://en.wikipedia.org/wiki/Universal_Disk_Format#Compatibility (as retrieved on 2014-Aug-28).
+
+
+# Prerequisites
 To install necessary prerequisites on Ubuntu:
 
     sudo apt-get install udftools
+
 
 # Installation
 Simply copy format-udf.sh to a directory of your choosing.  Don't forget to make it executable:
 
     chmod +x format-udf.sh
+
 
 # Usage
 ```
