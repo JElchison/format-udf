@@ -168,8 +168,8 @@ fi
 ###############################################################################
 
 echo "[+] Gathering drive information..."
-cat /sys/block/$DEVICE/device/model
 if [[ $TOOL_DRIVE_LISTING = $TOOL_BLOCKDEV ]]; then
+    cat /sys/block/$DEVICE/device/model
     sudo blockdev --report | egrep "(Device|$DEVICE)"
 elif [[ $TOOL_DRIVE_LISTING = $TOOL_DISKUTIL ]]; then
     diskutil list $DEVICE
