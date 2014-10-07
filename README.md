@@ -60,7 +60,7 @@ DOS, FreeDOS, Windows 3.11 or older	|Filesystems that have an ISO9660 backward c
     * false
     * awk
     * dd
-    * *One* of the following:  lshw, diskutil
+    * *One* of the following:  blockdev, diskutil
     * *One* of the following:  umount, diskutil
     * *One* of the following:  mkudffs, newfs_udf
 
@@ -90,25 +90,28 @@ Example:
 # Example usage
 On Ubuntu:
 ```
-user@computer:~$ ./format-udf.sh sdi "My External Drive"
+user@computer:~$ ./format-udf.sh sdb "My External Drive"
 [+] Testing dependencies...
-[+] Looking for drive listing tool... using /usr/bin/lshw
+[+] Looking for drive listing tool... using /sbin/blockdev
 [+] Looking for unmount tool... using /bin/umount
 [+] Looking for UDF tool... using /usr/bin/mkudffs
 [+] Validating arguments...
 [+] Gathering drive information...
+Patriot Memory
 [sudo] password for user: 
-/0/b/0.0.0       /dev/sdi     disk        4003MB SCSI Disk
+RO    RA   SSZ   BSZ   StartSec            Size   Device
+rw   256   512  4096          0      4003463168   /dev/sdb
 The above-listed drive (and partitions, if any) will be completely erased.
 Type 'yes' if this is what you intend:  yes
 [+] Detecting native sector size...
 [+] Validating detected sector size...
 [+] Unmounting drive...
+umount: /dev/sdb: not mounted
 [+] Zeroing out any existing partition table on drive...
 4096+0 records in
 4096+0 records out
-2097152 bytes (2.1 MB) copied, 0.737711 s, 2.8 MB/s
-[+] Formatting /dev/sdi ...
+2097152 bytes (2.1 MB) copied, 0.924472 s, 2.3 MB/s
+[+] Formatting /dev/sdb ...
 start=0, blocks=64, type=RESERVED 
 start=64, blocks=12, type=VRS 
 start=76, blocks=180, type=USPACE 
@@ -120,7 +123,7 @@ start=7819007, blocks=1, type=ANCHOR
 start=7819008, blocks=239, type=USPACE 
 start=7819247, blocks=16, type=RVDS 
 start=7819263, blocks=1, type=ANCHOR 
-[*] Successfully formatted /dev/sdi: LABEL="My External Drive" TYPE="udf" 
+[*] Successfully formatted /dev/sdb: LABEL="My External Drive" TYPE="udf"
 Please disconnect/reconnect your drive now.
 ```
 

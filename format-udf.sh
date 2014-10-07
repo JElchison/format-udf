@@ -4,7 +4,7 @@
 #
 # Bash script to format a block drive (hard drive or Flash drive) in UDF.  The output is a drive that can be used for reading/writing across multiple operating system families:  Windows, OS X, and Linux.  This script should be capable of running in OS X or in Linux.
 #
-# Version 1.0.1
+# Version 1.0.2
 #
 # Copyright (C) 2014 Jonathan Elchison <JElchison@gmail.com>
 #
@@ -61,17 +61,17 @@ fi
 # ensure have required drive listing tool
 echo -n "[+] Looking for drive listing tool..."
 # `true` is so that a failure here doesn't cause entire script to exit prematurely
-TOOL_LSHW=$(which lshw) || true
+TOOL_BLOCKDEV=$(which blockdev) || true
 # `true` is so that a failure here doesn't cause entire script to exit prematurely
 TOOL_DISKUTIL=$(which diskutil) || true
-if [[ ! -x $TOOL_LSHW ]] && [[ ! -x $TOOL_DISKUTIL ]]; then
+if [[ ! -x $TOOL_BLOCKDEV ]] && [[ ! -x $TOOL_DISKUTIL ]]; then
     echo
-    echo "[-] Dependencies unmet.  Please verify that at least one of the following are installed, executable, and in the PATH:  lshw, diskutil" >&2
+    echo "[-] Dependencies unmet.  Please verify that at least one of the following are installed, executable, and in the PATH:  blockdev, diskutil" >&2
     exit 1
 fi
 # select drive listing tool
-if [[ -n "$TOOL_LSHW" ]]; then
-    TOOL_DRIVE_LISTING=$TOOL_LSHW
+if [[ -n "$TOOL_BLOCKDEV" ]]; then
+    TOOL_DRIVE_LISTING=$TOOL_BLOCKDEV
 elif [[ -n "$TOOL_DISKUTIL" ]]; then
     TOOL_DRIVE_LISTING=$TOOL_DISKUTIL
 else
@@ -168,8 +168,9 @@ fi
 ###############################################################################
 
 echo "[+] Gathering drive information..."
-if [[ $TOOL_DRIVE_LISTING = $TOOL_LSHW ]]; then
-    sudo lshw -short -quiet | grep /dev/$DEVICE
+if [[ $TOOL_DRIVE_LISTING = $TOOL_BLOCKDEV ]]; then
+    cat /sys/block/$DEVICE/device/model
+    sudo blockdev --report | egrep "(Device|$DEVICE)"
 elif [[ $TOOL_DRIVE_LISTING = $TOOL_DISKUTIL ]]; then
     diskutil list $DEVICE
 else
