@@ -203,6 +203,7 @@ else
     echo "[-] Cannot detect native sector size" >&2
     exit 1
 fi
+echo "[*] Using sector size of $SECTOR_SIZE"
 
 # validate that $SECTOR_SIZE is numeric > 0
 echo "[+] Validating detected sector size..."
