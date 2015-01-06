@@ -198,7 +198,7 @@ SECTOR_SIZE_PATH=/sys/block/$DEVICE/queue/hw_sector_size
 if [[ -r $SECTOR_SIZE_PATH ]]; then
     SECTOR_SIZE=$(cat $SECTOR_SIZE_PATH)
 elif [[ -x $TOOL_DISKUTIL ]]; then
-    SECTOR_SIZE=$(diskutil info $DEVICE | grep -i 'Block Size' | awk -F ':' '{print $2}' | awk '{print $1}')
+    SECTOR_SIZE=$(diskutil info $DEVICE | grep -i 'Device Block Size' | awk -F ':' '{print $2}' | awk '{print $1}')
 else
     echo "[-] Cannot detect native sector size" >&2
     exit 1
