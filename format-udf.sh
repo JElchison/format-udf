@@ -209,19 +209,11 @@ LABEL=$2
 
 # verify that DEVICE doesn't have partition number on end, or that it's in OS X format
 (echo "$DEVICE" | egrep -q '^([hs]d[a-z]|disk[0-9]+)$') || (echo "[-] <device> is of invalid form" >&2 && false)
-# TODO not sure why the following is required on bash 3.2.51(1) on OS X (doesn't exit with `false` even with 'set -e')
-RET=$?; if [[ $RET -ne 0 ]]; then
-    exit $RET
-fi
 
 # verify this is a device, not just a file
 # `true` is so that a failure here doesn't cause entire script to exit prematurely
 mount /dev/$DEVICE 2>/dev/null || true
 [[ -b /dev/$DEVICE ]] || (echo "[-] <device> either doesn't exists or is not block special" >&2 && false)
-# TODO not sure why the following is required on bash 3.2.51(1) on OS X (doesn't exit with `false` even with 'set -e')
-RET=$?; if [[ $RET -ne 0 ]]; then
-    exit $RET
-fi
 
 
 ###############################################################################
@@ -269,15 +261,7 @@ echo "[*] Using total size of $TOTAL_SIZE"
 # validate that $TOTAL_SIZE is numeric > 0
 echo "[+] Validating detected total size..."
 (echo "$TOTAL_SIZE" | egrep -q '^[0-9]+$') || (echo "[-] Could not detect valid total size.  Exiting without changes to /dev/$DEVICE." >&2 && false)
-# TODO not sure why the following is required on bash 3.2.51(1) on OS X (doesn't exit with `false` even with 'set -e')
-RET=$?; if [[ $RET -ne 0 ]]; then
-    exit $RET
-fi
 [[ $TOTAL_SIZE -gt 0 ]] || (echo "[-] Could not detect valid total size.  Exiting without changes to /dev/$DEVICE." >&2 && false)
-# TODO not sure why the following is required on bash 3.2.51(1) on OS X (doesn't exit with `false` even with 'set -e')
-RET=$?; if [[ $RET -ne 0 ]]; then
-    exit $RET
-fi
 
 
 ###############################################################################
@@ -298,15 +282,7 @@ echo "[*] Using block size of $BLOCK_SIZE"
 # validate that $BLOCK_SIZE is numeric > 0
 echo "[+] Validating detected block size..."
 (echo "$BLOCK_SIZE" | egrep -q '^[0-9]+$') || (echo "[-] Could not detect valid block size.  Exiting without changes to /dev/$DEVICE." >&2 && false)
-# TODO not sure why the following is required on bash 3.2.51(1) on OS X (doesn't exit with `false` even with 'set -e')
-RET=$?; if [[ $RET -ne 0 ]]; then
-    exit $RET
-fi
 [[ $BLOCK_SIZE -gt 0 ]] || (echo "[-] Could not detect valid block size.  Exiting without changes to /dev/$DEVICE." >&2 && false)
-# TODO not sure why the following is required on bash 3.2.51(1) on OS X (doesn't exit with `false` even with 'set -e')
-RET=$?; if [[ $RET -ne 0 ]]; then
-    exit $RET
-fi
 
 
 ###############################################################################
@@ -354,10 +330,6 @@ if [[ $TOOL_UDF = $TOOL_MKUDFFS ]]; then
     # --media-type - "hd" type covers both hard drives and USB drives
     # --utf8       - encode file names in UTF8
     (sudo mkudffs --blocksize=$BLOCK_SIZE --udfrev=0x0201 --lvid="$LABEL" --vid="$LABEL" --media-type=hd --utf8 /dev/$DEVICE) || (echo "[-] Format failed!" >&2 && false)
-    # TODO not sure why the following is required on bash 3.2.51(1) on OS X (doesn't exit with `false` even with 'set -e')
-    RET=$?; if [[ $RET -ne 0 ]]; then
-        exit $RET
-    fi
 elif [[ $TOOL_UDF = $TOOL_NEWFS_UDF ]]; then
     # -b    - the size of blocks in bytes. should be the same as the drive's physical block size.
     # -m    - "blk" type covers both hard drives and USB drives
@@ -366,10 +338,6 @@ elif [[ $TOOL_UDF = $TOOL_NEWFS_UDF ]]; then
     # -v    - volume identifier
     # --enc - encode volume name in UTF8
     (sudo newfs_udf -b $BLOCK_SIZE -m blk -t ow -r 2.01 -v "$LABEL" --enc utf8 /dev/$DEVICE) || (echo "[-] Format failed!" >&2 && false)
-    # TODO not sure why the following is required on bash 3.2.51(1) on OS X (doesn't exit with `false` even with 'set -e')
-    RET=$?; if [[ $RET -ne 0 ]]; then
-        exit $RET
-    fi
 else
     echo "[-] Internal error 3" >&2
     exit 1
