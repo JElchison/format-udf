@@ -72,7 +72,7 @@ function lba_to_chs {
 # Returns:
 #   None
 function ntohl {
-    printf "%08x" $1 | grep -o .. | tac | tr -d '\n'
+    printf "%08x" $1 | sed 's/../\0 /g' | awk '{print $4 $3 $2 $1}'
 }
 
 # Prints hex representation of entire-disk partition entry.  Reference:
@@ -84,8 +84,8 @@ function ntohl {
 # Returns:
 #   None
 function entire_disk_partition_entry {
-    BLOCK_SIZE=$(sudo blockdev --getpbsz /dev/$1)
-    TOTAL_SIZE=$(sudo blockdev --getsize64 /dev/$1)
+    TOTAL_SIZE=$1
+    BLOCK_SIZE=$2
     MAX_LBA=$(($TOTAL_SIZE/$BLOCK_SIZE))
 
     # status / physical drive (bit 7 set: active / bootable, old MBRs only accept 80h), 00h: inactive, 01h–7Fh: invalid)
@@ -112,7 +112,7 @@ function entire_disk_partition_entry {
     if [[ $MAX_LBA -ge $(((2**32)-1)) ]]; then
         # Sadly, MBR type 0x0b caps this at a 32-bit value.
         # Using a different partition type wouldn't actually help, as UDF 2.01 itself has a limit of 2^32 blocks
-        ntohl $(((2**32)-1))
+        echo -n "ffffffff"
     else
         ntohl $MAX_LBA
     fi
@@ -144,19 +144,12 @@ echo -n "[+] Looking for drive listing tool..."
 TOOL_BLOCKDEV=$(which blockdev) || true
 # `true` is so that a failure here doesn't cause entire script to exit prematurely
 TOOL_DISKUTIL=$(which diskutil) || true
-if [[ ! -x $TOOL_BLOCKDEV ]] && [[ ! -x $TOOL_DISKUTIL ]]; then
-    echo
-    echo "[-] Dependencies unmet.  Please verify that at least one of the following are installed, executable, and in the PATH:  blockdev, diskutil" >&2
-    exit 1
-fi
-# select drive listing tool
-if [[ -n "$TOOL_BLOCKDEV" ]]; then
+if [[ -x "$TOOL_BLOCKDEV" ]]; then
     TOOL_DRIVE_LISTING=$TOOL_BLOCKDEV
-elif [[ -n "$TOOL_DISKUTIL" ]]; then
+elif [[ -x "$TOOL_DISKUTIL" ]]; then
     TOOL_DRIVE_LISTING=$TOOL_DISKUTIL
 else
-    echo
-    echo "[-] Internal error 1" >&2
+    echo "[-] Dependencies unmet.  Please verify that at least one of the following are installed, executable, and in the PATH:  blockdev, diskutil" >&2
     exit 1
 fi
 echo " using $TOOL_DRIVE_LISTING"
@@ -168,19 +161,13 @@ echo -n "[+] Looking for unmount tool..."
 TOOL_UMOUNT=$(which umount) || true
 # `true` is so that a failure here doesn't cause entire script to exit prematurely
 TOOL_DISKUTIL=$(which diskutil) || true
-if [[ ! -x $TOOL_UMOUNT ]] && [[ ! -x $TOOL_DISKUTIL ]]; then
-    echo
-    echo "[-] Dependencies unmet.  Please verify that at least one of the following are installed, executable, and in the PATH:  umount, diskutil" >&2
-    exit 1
-fi
-# select unmount tool.  prefer 'diskutil' if available, as it's required on OS X (even if 'umount' is present).
-if [[ -n "$TOOL_DISKUTIL" ]]; then
+# prefer 'diskutil' if available, as it's required on OS X (even if 'umount' is present)
+if [[ -x "$TOOL_DISKUTIL" ]]; then
     TOOL_UNMOUNT=$TOOL_DISKUTIL
-elif [[ -n "$TOOL_UMOUNT" ]]; then
+elif [[ -x "$TOOL_UMOUNT" ]]; then
     TOOL_UNMOUNT=$TOOL_UMOUNT
 else
-    echo
-    echo "[-] Internal error 2" >&2
+    echo "[-] Dependencies unmet.  Please verify that at least one of the following are installed, executable, and in the PATH:  umount, diskutil" >&2
     exit 1
 fi
 echo " using $TOOL_UNMOUNT"
@@ -192,19 +179,12 @@ echo -n "[+] Looking for UDF tool..."
 TOOL_MKUDFFS=$(which mkudffs) || true
 # `true` is so that a failure here doesn't cause entire script to exit prematurely
 TOOL_NEWFS_UDF=$(which newfs_udf) || true
-if [[ ! -x $TOOL_MKUDFFS ]] && [[ ! -x $TOOL_NEWFS_UDF ]]; then
-    echo
-    echo "[-] Dependencies unmet.  Please verify that at least one of the following are installed, executable, and in the PATH:  mkudffs, newfs_udf" >&2
-    exit 1
-fi
-# select UDF tool
-if [[ -n "$TOOL_MKUDFFS" ]]; then
+if [[ -x "$TOOL_MKUDFFS" ]]; then
     TOOL_UDF=$TOOL_MKUDFFS
-elif [[ -n "$TOOL_NEWFS_UDF" ]]; then
+elif [[ -x "$TOOL_NEWFS_UDF" ]]; then
     TOOL_UDF=$TOOL_NEWFS_UDF
 else
-    echo
-    echo "[-] Internal error 3" >&2
+    echo "[-] Dependencies unmet.  Please verify that at least one of the following are installed, executable, and in the PATH:  mkudffs, newfs_udf" >&2
     exit 1
 fi
 echo " using $TOOL_UDF"
@@ -254,7 +234,7 @@ if [[ $TOOL_DRIVE_LISTING = $TOOL_BLOCKDEV ]]; then
 elif [[ $TOOL_DRIVE_LISTING = $TOOL_DISKUTIL ]]; then
     diskutil list $DEVICE
 else
-    echo "[-] Internal error 4" >&2
+    echo "[-] Internal error 1" >&2
     exit 1
 fi
 
@@ -270,30 +250,57 @@ fi
 
 
 ###############################################################################
-# gather information
+# gather information - total size
 ###############################################################################
 
-echo "[+] Detecting native sector size..."
-SECTOR_SIZE_PATH=/sys/block/$DEVICE/queue/hw_sector_size
-if [[ -r $SECTOR_SIZE_PATH ]]; then
-    SECTOR_SIZE=$(cat $SECTOR_SIZE_PATH)
+echo "[+] Detecting total size..."
+if [[ $TOOL_DRIVE_LISTING = $TOOL_BLOCKDEV ]]; then
+    TOTAL_SIZE=$(sudo blockdev --getsize64 /dev/$DEVICE)
 elif [[ -x $TOOL_DISKUTIL ]]; then
-    SECTOR_SIZE=$(diskutil info $DEVICE | grep -i 'Device Block Size' | awk -F ':' '{print $2}' | awk '{print $1}')
+    TOTAL_SIZE=$(TODO)
 else
-    echo "[-] Cannot detect native sector size" >&2
+    echo "[-] Cannot detect total size" >&2
     exit 1
 fi
-echo "[*] Using sector size of $SECTOR_SIZE"
+echo "[*] Using total size of $TOTAL_SIZE"
 
-# validate that $SECTOR_SIZE is numeric > 0
-echo "[+] Validating detected sector size..."
-(echo "$SECTOR_SIZE" | egrep -q '^[0-9]+$') || (echo "[-] Could not detect valid sector size.  Exiting without changes to /dev/$DEVICE." >&2 && false)
+# validate that $TOTAL_SIZE is numeric > 0
+echo "[+] Validating detected total size..."
+(echo "$TOTAL_SIZE" | egrep -q '^[0-9]+$') || (echo "[-] Could not detect valid total size.  Exiting without changes to /dev/$DEVICE." >&2 && false)
 # TODO not sure why the following is required on bash 3.2.51(1) on OS X (doesn't exit with `false` even with 'set -e')
 RET=$?; if [[ $RET -ne 0 ]]; then
     exit $RET
 fi
-if [[ $SECTOR_SIZE -le 0 ]]; then
-    echo "[-] Could not detect valid sector size.  Exiting without changes to /dev/$DEVICE." >&2
+if [[ $TOTAL_SIZE -le 0 ]]; then
+    echo "[-] Could not detect valid total size.  Exiting without changes to /dev/$DEVICE." >&2
+    exit 1
+fi
+
+
+###############################################################################
+# gather information - physical block size
+###############################################################################
+
+echo "[+] Detecting physical block size..."
+if [[ $TOOL_DRIVE_LISTING = $TOOL_BLOCKDEV ]]; then
+    BLOCK_SIZE=$(sudo blockdev --getpbsz /dev/$DEVICE)
+elif [[ -x $TOOL_DISKUTIL ]]; then
+    BLOCK_SIZE=$(diskutil info $DEVICE | grep -i 'Device Block Size' | awk -F ':' '{print $2}' | awk '{print $1}')
+else
+    echo "[-] Cannot detect physical block size" >&2
+    exit 1
+fi
+echo "[*] Using block size of $BLOCK_SIZE"
+
+# validate that $BLOCK_SIZE is numeric > 0
+echo "[+] Validating detected block size..."
+(echo "$BLOCK_SIZE" | egrep -q '^[0-9]+$') || (echo "[-] Could not detect valid block size.  Exiting without changes to /dev/$DEVICE." >&2 && false)
+# TODO not sure why the following is required on bash 3.2.51(1) on OS X (doesn't exit with `false` even with 'set -e')
+RET=$?; if [[ $RET -ne 0 ]]; then
+    exit $RET
+fi
+if [[ $BLOCK_SIZE -le 0 ]]; then
+    echo "[-] Could not detect valid block size.  Exiting without changes to /dev/$DEVICE." >&2
     exit 1
 fi
 
@@ -310,7 +317,7 @@ elif [[ $TOOL_UNMOUNT = $TOOL_DISKUTIL ]]; then
     # `true` is so that a failure here doesn't cause entire script to exit prematurely
     sudo diskutil unmount /dev/$DEVICE || true
 else
-    echo "[-] Internal error 5" >&2
+    echo "[-] Internal error 2" >&2
     exit 1
 fi
 
@@ -321,10 +328,12 @@ fi
 
 echo "[+] Zeroing out any existing partition table on drive..."
 # 4096 was arbitrarily chosen to be "big enough" to delete first chunk of disk
-sudo dd if=/dev/zero of=/dev/$DEVICE bs=$SECTOR_SIZE count=4096
+sudo dd if=/dev/zero of=/dev/$DEVICE bs=$BLOCK_SIZE count=4096
 
 echo "[+] Writing fake MBR..."
-entire_disk_partition_entry $DEVICE | xxd -r -p | sudo dd of=/dev/$DEVICE bs=1 seek=446 count=16
+# first block has already been zero'd.  start by writing the (only) partition entry at its correct offset.
+entire_disk_partition_entry $TOTAL_SIZE $BLOCK_SIZE | xxd -r -p | sudo dd of=/dev/$DEVICE bs=1 seek=446 count=16
+# Boot signature at the end of the block
 echo -n 55aa | xxd -r -p | sudo dd of=/dev/$DEVICE bs=1 seek=510 count=2
 
 
@@ -334,31 +343,31 @@ echo -n 55aa | xxd -r -p | sudo dd of=/dev/$DEVICE bs=1 seek=510 count=2
 
 echo "[+] Formatting /dev/$DEVICE ..."
 if [[ $TOOL_UDF = $TOOL_MKUDFFS ]]; then
-    # --blocksize  - the size of blocks in bytes. should be the same as the drive's native sector size.
+    # --blocksize  - the size of blocks in bytes. should be the same as the drive's physical block size.
     # --udfrev     - the udf revision to use.  2.01 is the latest revision available that supports writing in Linux.
     # --lvid       - logical volume identifier
     # --vid        - volume identifier
     # --media-type - "hd" type covers both hard drives and USB drives
     # --utf8       - encode file names in UTF8
-    (sudo mkudffs --blocksize=$SECTOR_SIZE --udfrev=0x0201 --lvid="$LABEL" --vid="$LABEL" --media-type=hd --utf8 /dev/$DEVICE) || (echo "[-] Format failed!" >&2 && false)
+    (sudo mkudffs --blocksize=$BLOCK_SIZE --udfrev=0x0201 --lvid="$LABEL" --vid="$LABEL" --media-type=hd --utf8 /dev/$DEVICE) || (echo "[-] Format failed!" >&2 && false)
     # TODO not sure why the following is required on bash 3.2.51(1) on OS X (doesn't exit with `false` even with 'set -e')
     RET=$?; if [[ $RET -ne 0 ]]; then
         exit $RET
     fi
 elif [[ $TOOL_UDF = $TOOL_NEWFS_UDF ]]; then
-    # -b    - the size of blocks in bytes. should be the same as the drive's native sector size.
+    # -b    - the size of blocks in bytes. should be the same as the drive's physical block size.
     # -m    - "blk" type covers both hard drives and USB drives
     # -t    - "overwrite" access type
     # -r    - the udf revision to use.  2.01 is the latest revision available that supports writing in Linux.
     # -v    - volume identifier
     # --enc - encode volume name in UTF8
-    (sudo newfs_udf -b $SECTOR_SIZE -m blk -t ow -r 2.01 -v "$LABEL" --enc utf8 /dev/$DEVICE) || (echo "[-] Format failed!" >&2 && false)
+    (sudo newfs_udf -b $BLOCK_SIZE -m blk -t ow -r 2.01 -v "$LABEL" --enc utf8 /dev/$DEVICE) || (echo "[-] Format failed!" >&2 && false)
     # TODO not sure why the following is required on bash 3.2.51(1) on OS X (doesn't exit with `false` even with 'set -e')
     RET=$?; if [[ $RET -ne 0 ]]; then
         exit $RET
     fi
 else
-    echo "[-] Internal error 6" >&2
+    echo "[-] Internal error 3" >&2
     exit 1
 fi
 
