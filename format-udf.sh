@@ -132,8 +132,9 @@ if [[ ! -x $(which cat) ]] ||
    [[ ! -x $(which true) ]] ||
    [[ ! -x $(which false) ]] ||
    [[ ! -x $(which awk) ]] ||
-   [[ ! -x $(which dd) ]]; then
-    echo "[-] Dependencies unmet.  Please verify that the following are installed, executable, and in the PATH:  cat, grep, egrep, mount, test, true, false, awk, dd" >&2
+   [[ ! -x $(which dd) ]] ||
+   [[ ! -x $(which xxd) ]]; then
+    echo "[-] Dependencies unmet.  Please verify that the following are installed, executable, and in the PATH:  cat, grep, egrep, mount, test, true, false, awk, dd, xxd" >&2
     exit 1
 fi
 
