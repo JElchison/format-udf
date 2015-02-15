@@ -135,21 +135,31 @@ computer:~ user$ ./format-udf.sh disk2 "My External Drive"
 [+] Gathering drive information...
 /dev/disk2
    #:                       TYPE NAME                    SIZE       IDENTIFIER
-   0:                            My External Drive      *4.0 GB     disk2
+   0:                            My Disk                *100.0 GB   disk2
 The above-listed drive (and partitions, if any) will be completely erased.
 Type 'yes' if this is what you intend:  yes
-[+] Detecting native sector size...
-[+] Validating detected sector size...
+[+] Detecting total size...
+[*] Using total size of 100030242816
+[+] Validating detected total size...
+[+] Detecting physical block size...
+[*] Using block size of 512
+[+] Validating detected block size...
 [+] Unmounting drive...
 Password:
-Volume My External Drive on disk2 unmounted
+Volume My Disk on disk2 unmounted
 [+] Zeroing out any existing partition table on drive...
 4096+0 records in
 4096+0 records out
-2097152 bytes transferred in 2.710918 secs (773595 bytes/sec)
+2097152 bytes transferred in 0.603065 secs (3477489 bytes/sec)
+[+] Writing fake MBR...
+12+0 records in
+12+0 records out
+12 bytes transferred in 0.000631 secs (19015 bytes/sec)
+2+0 records in
+2+0 records out
+2 bytes transferred in 0.000616 secs (3248 bytes/sec)
 [+] Formatting /dev/disk2 ...
-write to block device: /dev/disk2  last written block address: 7819263
-[*] Successfully formatted 
+write to block device: /dev/disk2  last written block address: 195371567
+[*] Successfully formatted
 Please disconnect/reconnect your drive now.
 ```
-
