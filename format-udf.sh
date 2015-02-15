@@ -273,9 +273,10 @@ echo "[+] Validating detected total size..."
 RET=$?; if [[ $RET -ne 0 ]]; then
     exit $RET
 fi
-if [[ $TOTAL_SIZE -le 0 ]]; then
-    echo "[-] Could not detect valid total size.  Exiting without changes to /dev/$DEVICE." >&2
-    exit 1
+[[ $TOTAL_SIZE -gt 0 ]] || (echo "[-] Could not detect valid total size.  Exiting without changes to /dev/$DEVICE." >&2 && false)
+# TODO not sure why the following is required on bash 3.2.51(1) on OS X (doesn't exit with `false` even with 'set -e')
+RET=$?; if [[ $RET -ne 0 ]]; then
+    exit $RET
 fi
 
 
@@ -301,9 +302,10 @@ echo "[+] Validating detected block size..."
 RET=$?; if [[ $RET -ne 0 ]]; then
     exit $RET
 fi
-if [[ $BLOCK_SIZE -le 0 ]]; then
-    echo "[-] Could not detect valid block size.  Exiting without changes to /dev/$DEVICE." >&2
-    exit 1
+[[ $BLOCK_SIZE -gt 0 ]] || (echo "[-] Could not detect valid block size.  Exiting without changes to /dev/$DEVICE." >&2 && false)
+# TODO not sure why the following is required on bash 3.2.51(1) on OS X (doesn't exit with `false` even with 'set -e')
+RET=$?; if [[ $RET -ne 0 ]]; then
+    exit $RET
 fi
 
 
