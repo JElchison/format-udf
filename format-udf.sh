@@ -4,7 +4,7 @@
 #
 # Bash script to format a block drive (hard drive or Flash drive) in UDF.  The output is a drive that can be used for reading/writing across multiple operating system families:  Windows, OS X, and Linux.  This script should be capable of running in OS X or in Linux.
 #
-# Version 1.0.3
+# Version 1.1.0
 #
 # Copyright (C) 2015 Jonathan Elchison <JElchison@gmail.com>
 #
@@ -26,16 +26,96 @@
 # setup Bash environment
 set -euf -o pipefail
 
-#######################################
+
+###############################################################################
+# constants
+###############################################################################
+
+# maximum number of heads per cylinder
+HPC=255
+# maximum number of sectors per track
+SPT=63
+
+
+###############################################################################
+# functions
+###############################################################################
+
 # Prints script usage to stderr
 # Arguments:
 #   None
 # Returns:
 #   None
-#######################################
 print_usage() {
     echo "Usage:    $0 <drive> <label>" >&2
     echo "Example:  $0 sda \"My External Drive\"" >&2
+}
+
+# Prints hex representation of CHS (cylinder-head-sector) to stdout
+# Arguments:
+#   Logical block address (LBA)
+# Returns:
+#   None
+function lba_to_chs {
+    LBA=$1
+    C=$((($LBA/($HPC*$SPT)) % (2**10)))
+    C_HI=$((($C>>8) % (2**2)))
+    C_LO=$(($C % (2**8)))
+    H=$(((($LBA/$SPT) % $HPC) % (2**8)))
+    S=$(((($LBA % $SPT) + 1) % (2**6)))
+    printf "%02x%02x%02x" $H $((($C_HI<<6)|$S)) $C_LO
+}
+
+# Prints hex representation of value in host byte order
+# Arguments:
+#   32-bit integer
+# Returns:
+#   None
+function ntohl {
+    printf "%08x" $1 | grep -o .. | tac | tr -d '\n'
+}
+
+# Prints hex representation of entire-disk partition entry.  Reference:
+# https://en.wikipedia.org/wiki/Master_boot_record
+# https://en.wikipedia.org/wiki/Cylinder-head-sector
+# https://en.wikipedia.org/wiki/Logical_block_addressing
+# Arguments:
+#   Device
+# Returns:
+#   None
+function entire_disk_partition_entry {
+    BLOCK_SIZE=$(sudo blockdev --getpbsz /dev/$1)
+    TOTAL_SIZE=$(sudo blockdev --getsize64 /dev/$1)
+    MAX_LBA=$(($TOTAL_SIZE/$BLOCK_SIZE))
+
+    # status / physical drive (bit 7 set: active / bootable, old MBRs only accept 80h), 00h: inactive, 01h–7Fh: invalid)
+    echo -n "00"
+    # CHS address of first absolute sector in partition. The format is described by 3 bytes.
+    lba_to_chs 0
+    # Partition type = FAT32 with CHS addressing
+    echo -n "0b"
+    # CHS address of last absolute sector in partition. The format is described by 3 bytes.
+    if [[ $MAX_LBA -ge $((1024*$HPC*$SPT-1)) ]]; then
+        # From https://en.wikipedia.org/wiki/Master_boot_record#Partition_table_entries
+        # When a CHS address is too large to fit into these fields, the tuple (1023, 254, 63) is typically used today
+        echo -n "feffff"
+    else
+        # '-1' yields last usable sector
+        lba_to_chs $(($MAX_LBA-1))
+    fi
+
+    # LBA of first absolute sector in the partition.
+    # This is the magic of what we're trying to accomplish.  We need this partition to be whole-disk.
+    ntohl 0
+    # Number of sectors in partition.
+    # Note lack of '-1' here, as we're interested in number of sectors.
+    if [[ $MAX_LBA -ge $(((2**32)-1)) ]]; then
+        # Sadly, MBR type 0x0b caps this at a 32-bit value.
+        # Using a different partition type wouldn't actually help, as UDF 2.01 itself has a limit of 2^32 blocks
+        ntohl $(((2**32)-1))
+    else
+        ntohl $MAX_LBA
+    fi
 }
 
 
@@ -236,16 +316,16 @@ fi
 
 
 ###############################################################################
-# zero partition table
+# write fake MBR (for added compatibility on Windows)
 ###############################################################################
 
 echo "[+] Zeroing out any existing partition table on drive..."
 # 4096 was arbitrarily chosen to be "big enough" to delete first chunk of disk
 sudo dd if=/dev/zero of=/dev/$DEVICE bs=$SECTOR_SIZE count=4096
 
-# TODO add capability to (optionally) zero entire drive (may take a long time)
-
-# no need to re-partition, UDF explicitly doesn't use a partition table.
+echo "[+] Writing fake MBR..."
+entire_disk_partition_entry $DEVICE | xxd -r -p | sudo dd of=/dev/$DEVICE bs=1 seek=446 count=16
+echo -n 55aa | xxd -r -p | sudo dd of=/dev/$DEVICE bs=1 seek=510 count=2
 
 
 ###############################################################################
