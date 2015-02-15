@@ -217,7 +217,7 @@ fi
 # verify this is a device, not just a file
 # `true` is so that a failure here doesn't cause entire script to exit prematurely
 mount /dev/$DEVICE 2>/dev/null || true
-(test -b /dev/$DEVICE) || (echo "[-] <device> either doesn't exists or is not block special" >&2 && false)
+[[ -b /dev/$DEVICE ]] || (echo "[-] <device> either doesn't exists or is not block special" >&2 && false)
 # TODO not sure why the following is required on bash 3.2.51(1) on OS X (doesn't exit with `false` even with 'set -e')
 RET=$?; if [[ $RET -ne 0 ]]; then
     exit $RET
