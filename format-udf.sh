@@ -303,18 +303,12 @@ fi
 
 
 ###############################################################################
-# write fake MBR (for added compatibility on Windows)
+# zero out partition table
 ###############################################################################
 
 echo "[+] Zeroing out any existing partition table on drive..."
 # 4096 was arbitrarily chosen to be "big enough" to delete first chunk of disk
 sudo dd if=/dev/zero of=/dev/$DEVICE bs=$BLOCK_SIZE count=4096
-
-echo "[+] Writing fake MBR..."
-# first block has already been zero'd.  start by writing the (only) partition entry at its correct offset.
-entire_disk_partition_entry $TOTAL_SIZE $BLOCK_SIZE | xxd -r -p | sudo dd of=/dev/$DEVICE bs=1 seek=446 count=16
-# Boot signature at the end of the block
-echo -n 55aa | xxd -r -p | sudo dd of=/dev/$DEVICE bs=1 seek=510 count=2
 
 
 ###############################################################################
@@ -342,6 +336,17 @@ else
     echo "[-] Internal error 3" >&2
     exit 1
 fi
+
+
+###############################################################################
+# write fake MBR (for added compatibility on Windows)
+###############################################################################
+
+echo "[+] Writing fake MBR..."
+# first block has already been zero'd.  start by writing the (only) partition entry at its correct offset.
+entire_disk_partition_entry $TOTAL_SIZE $BLOCK_SIZE | xxd -r -p | sudo dd of=/dev/$DEVICE bs=1 seek=446 count=16
+# Boot signature at the end of the block
+echo -n 55aa | xxd -r -p | sudo dd of=/dev/$DEVICE bs=1 seek=510 count=2
 
 
 ###############################################################################
