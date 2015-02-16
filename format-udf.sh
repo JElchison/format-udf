@@ -132,9 +132,11 @@ if [[ ! -x $(which cat) ]] ||
    [[ ! -x $(which true) ]] ||
    [[ ! -x $(which false) ]] ||
    [[ ! -x $(which awk) ]] ||
+   [[ ! -x $(which printf) ]] ||
+   [[ ! -x $(which sed) ]] ||
    [[ ! -x $(which dd) ]] ||
    [[ ! -x $(which xxd) ]]; then
-    echo "[-] Dependencies unmet.  Please verify that the following are installed, executable, and in the PATH:  cat, grep, egrep, mount, test, true, false, awk, dd, xxd" >&2
+    echo "[-] Dependencies unmet.  Please verify that the following are installed, executable, and in the PATH:  cat, grep, egrep, mount, test, true, false, awk, printf, sed, dd, xxd" >&2
     exit 1
 fi
 
@@ -150,6 +152,7 @@ if [[ -x "$TOOL_BLOCKDEV" ]]; then
 elif [[ -x "$TOOL_DISKUTIL" ]]; then
     TOOL_DRIVE_LISTING=$TOOL_DISKUTIL
 else
+    echo
     echo "[-] Dependencies unmet.  Please verify that at least one of the following are installed, executable, and in the PATH:  blockdev, diskutil" >&2
     exit 1
 fi
@@ -168,6 +171,7 @@ if [[ -x "$TOOL_DISKUTIL" ]]; then
 elif [[ -x "$TOOL_UMOUNT" ]]; then
     TOOL_UNMOUNT=$TOOL_UMOUNT
 else
+    echo
     echo "[-] Dependencies unmet.  Please verify that at least one of the following are installed, executable, and in the PATH:  umount, diskutil" >&2
     exit 1
 fi
@@ -185,6 +189,7 @@ if [[ -x "$TOOL_MKUDFFS" ]]; then
 elif [[ -x "$TOOL_NEWFS_UDF" ]]; then
     TOOL_UDF=$TOOL_NEWFS_UDF
 else
+    echo
     echo "[-] Dependencies unmet.  Please verify that at least one of the following are installed, executable, and in the PATH:  mkudffs, newfs_udf" >&2
     exit 1
 fi
