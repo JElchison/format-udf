@@ -72,7 +72,7 @@ function lba_to_chs {
 # Returns:
 #   None
 function ntohl {
-    printf "%08x" $1 | sed 's/../\0 /g' | awk '{print $4 $3 $2 $1}'
+    printf "%08x" $1 | sed 's/../\0 /g' | awk '{printf "%02x%02x%02x%02x", $4, $3, $2, $1}'
 }
 
 # Prints hex representation of entire-disk partition entry.  Reference:
