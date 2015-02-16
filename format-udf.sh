@@ -295,7 +295,7 @@ if [[ $TOOL_UNMOUNT = $TOOL_UMOUNT ]]; then
     sudo umount /dev/$DEVICE || true
 elif [[ $TOOL_UNMOUNT = $TOOL_DISKUTIL ]]; then
     # `true` is so that a failure here doesn't cause entire script to exit prematurely
-    sudo diskutil unmount /dev/$DEVICE || true
+    sudo diskutil unmountDisk /dev/$DEVICE || true
 else
     echo "[-] Internal error 2" >&2
     exit 1
