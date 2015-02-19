@@ -72,7 +72,13 @@ function lba_to_chs {
 # Returns:
 #   None
 function ntohl {
-    printf "%08x" $1 | sed -E 's/(..)/\1 /g' | awk '{print $4 $3 $2 $1}'
+    if sed --version &> /dev/null; then
+        # this box has GNU sed ('-r' for extended regex)
+        printf "%08x" $1 | tail -c 8 | sed -r 's/(..)/\1 /g' | awk '{print $4 $3 $2 $1}'
+    else
+        # this machine must have BSD sed ('-E' for extended regex)
+        printf "%08x" $1 | tail -c 8 | sed -E 's/(..)/\1 /g' | awk '{print $4 $3 $2 $1}'
+    fi
 }
 
 # Prints hex representation of entire-disk partition entry.  Reference:
