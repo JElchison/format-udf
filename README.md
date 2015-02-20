@@ -9,43 +9,42 @@ Bash script to format a block drive (hard drive or Flash drive) in UDF.  The out
     * UDF revision 2.01 used for maximal compatibility (see note on Linux support below)
 * Resulting file system can be read/written across multiple operating system families (Windows, OS X, and Linux)
 * Runs on any OS having a Bash environment
+* Writes a fake MBR for added compatibility on Windows
 
 
 # OS Support
-
-Following tables detail operating system support for UDF.  Data was adapted from https://en.wikipedia.org/wiki/Universal_Disk_Format#Compatibility (as retrieved on 2014-Aug-28).
-
+Following tables detail operating system support for UDF.  Data was adapted from https://en.wikipedia.org/wiki/Universal_Disk_Format#Compatibility (as retrieved on 2015-Feb-20).
 
 ### Natively Supported
 
 Both read/write are supported unless otherwise listed below.
 
-Operating System			|Read-only				|Note
-----------------------------------------|---------------------------------------|----------------------------------------
-Mac OS X 10.5, 10.6, 10.7, 10.8, 10.9	|					|
-Windows Vista, 7, 8			|					|Referred to by Microsoft as "Live File System"
-Windows XP, Server 2003			|Read-only				|Write support available with third party utilities.
-Linux 2.6, 3.x				|UDF revisions 2.01 and before have read/write.  After 2.01, read-only.	| 
-AIX 5.2, 5.3, 6.1			|					|
-BeOS, magnussoft ZETA, Haiku		|					|
-DosBox					|					|
-eComStation, OS/2			|					|Additional fee drivers on OS/2
-NetBSD 5.0				|					|
+Operating System                             |Read-only|Note
+---------------------------------------------|---------|----------------------------------------
+Mac OS X 10.5, 10.6, 10.7, 10.8, 10.9, 10.10 |         |
+Windows Vista, 7, 8                          |         |Referred to by Microsoft as "Live File System"; Requires fake full-disk partition
+Windows XP, Server 2003                      |Read-only|Write support available with third party utilities
+Linux 2.6, 3.x                               |UDF revisions 2.01 and before have read/write.  After 2.01, read-only. | 
+AIX 5.2, 5.3, 6.1                            |         |
+BeOS, magnussoft ZETA, Haiku                 |         |
+DosBox                                       |         |
+eComStation, OS/2                            |         |Additional-fee drivers on OS/2
+NetBSD 5.0                                   |         |
 
 
 ### Supported with Third-Party Utilities
 
-Operating System			|Note
-----------------------------------------|-----------------------------------
-Windows 95 OSR2+, 98, ME		|Such utilities include DLA and InCD
-Windows 2000				|
+Operating System                        |Note
+----------------------------------------|------------------------------
+Windows 95 OSR2+, 98, Me                |Utilities include DLA and InCD
+Windows 2000                            |
 
 
 ### Not Supported
 
-Operating System			|Note
+Operating System                        |Note
 ----------------------------------------|-------------------------------------------------
-DOS, FreeDOS, Windows 3.11 or older	|Filesystems that have an ISO9660 backward compatibility structure can be read
+DOS, FreeDOS, Windows 3.11 or older     |Filesystems that have an ISO9660 backward compatibility structure can be read
 
 
 # Environment
@@ -59,7 +58,10 @@ DOS, FreeDOS, Windows 3.11 or older	|Filesystems that have an ISO9660 backward c
     * true
     * false
     * awk
+    * printf
+    * sed
     * dd
+    * xxd
     * *One* of the following:  blockdev, diskutil
     * *One* of the following:  umount, diskutil
     * *One* of the following:  mkudffs, newfs_udf
@@ -83,53 +85,65 @@ Simply copy format-udf.sh to a directory of your choosing.  Don't forget to make
 ```
 Example:
 ```
-./format-udf.sh sda "My External Drive"
+./format-udf.sh sda "My UDF External Drive"
 ```
 
 
-# Example usage
+### Example usage
 On Ubuntu:
 ```
-user@computer:~$ ./format-udf.sh sdb "My External Drive"
+user@computer:~$ ./format-udf.sh sdg "My UDF External Drive"
 [+] Testing dependencies...
 [+] Looking for drive listing tool... using /sbin/blockdev
 [+] Looking for unmount tool... using /bin/umount
 [+] Looking for UDF tool... using /usr/bin/mkudffs
 [+] Validating arguments...
 [+] Gathering drive information...
-Patriot Memory
 [sudo] password for user: 
+/dev/sdg: LABEL="Old Drive" TYPE="udf" 
+HTS721010G9SA00 
 RO    RA   SSZ   BSZ   StartSec            Size   Device
-rw   256   512  4096          0      4003463168   /dev/sdb
+rw   256   512  4096          0    100030242816   /dev/sdg
 The above-listed drive (and partitions, if any) will be completely erased.
 Type 'yes' if this is what you intend:  yes
-[+] Detecting native sector size...
-[+] Validating detected sector size...
+[+] Detecting total size...
+[*] Using total size of 100030242816
+[+] Validating detected total size...
+[+] Detecting physical block size...
+[*] Using block size of 512
+[+] Validating detected block size...
 [+] Unmounting drive...
-umount: /dev/sdb: not mounted
+umount: /dev/sdg: not mounted
 [+] Zeroing out any existing partition table on drive...
 4096+0 records in
 4096+0 records out
-2097152 bytes (2.1 MB) copied, 0.924472 s, 2.3 MB/s
-[+] Formatting /dev/sdb ...
+2097152 bytes (2.1 MB) copied, 0.531167 s, 3.9 MB/s
+[+] Formatting /dev/sdg ...
 start=0, blocks=64, type=RESERVED 
 start=64, blocks=12, type=VRS 
 start=76, blocks=180, type=USPACE 
 start=256, blocks=1, type=ANCHOR 
 start=257, blocks=16, type=PVDS 
 start=273, blocks=1, type=LVID 
-start=274, blocks=7818733, type=PSPACE 
-start=7819007, blocks=1, type=ANCHOR 
-start=7819008, blocks=239, type=USPACE 
-start=7819247, blocks=16, type=RVDS 
-start=7819263, blocks=1, type=ANCHOR 
-[*] Successfully formatted /dev/sdb: LABEL="My External Drive" TYPE="udf"
+start=274, blocks=195371037, type=PSPACE 
+start=195371311, blocks=1, type=ANCHOR 
+start=195371312, blocks=239, type=USPACE 
+start=195371551, blocks=16, type=RVDS 
+start=195371567, blocks=1, type=ANCHOR 
+[+] Writing fake MBR...
+16+0 records in
+16+0 records out
+16 bytes (16 B) copied, 0.00259109 s, 6.2 kB/s
+2+0 records in
+2+0 records out
+2 bytes (2 B) copied, 0.000108835 s, 18.4 kB/s
+[*] Successfully formatted /dev/sdg: LABEL="My UDF External Drive" TYPE="udf" 
 Please disconnect/reconnect your drive now.
 ```
 
 On OS X:
 ```
-computer:~ user$ ./format-udf.sh disk2 "My External Drive"
+computer:~ user$ ./format-udf.sh disk2 "My UDF External Drive"
 [+] Testing dependencies...
 [+] Looking for drive listing tool... using /usr/sbin/diskutil
 [+] Looking for unmount tool... using /usr/sbin/diskutil
@@ -138,21 +152,41 @@ computer:~ user$ ./format-udf.sh disk2 "My External Drive"
 [+] Gathering drive information...
 /dev/disk2
    #:                       TYPE NAME                    SIZE       IDENTIFIER
-   0:                            My External Drive      *4.0 GB     disk2
+   0:                            Old Drive              *100.0 GB   disk2
 The above-listed drive (and partitions, if any) will be completely erased.
 Type 'yes' if this is what you intend:  yes
-[+] Detecting native sector size...
-[+] Validating detected sector size...
+[+] Detecting total size...
+[*] Using total size of 100030242816
+[+] Validating detected total size...
+[+] Detecting physical block size...
+[*] Using block size of 512
+[+] Validating detected block size...
 [+] Unmounting drive...
 Password:
-Volume My External Drive on disk2 unmounted
+Unmount of all volumes on disk2 was successful
 [+] Zeroing out any existing partition table on drive...
 4096+0 records in
 4096+0 records out
-2097152 bytes transferred in 2.710918 secs (773595 bytes/sec)
+2097152 bytes transferred in 0.592766 secs (3537908 bytes/sec)
 [+] Formatting /dev/disk2 ...
-write to block device: /dev/disk2  last written block address: 7819263
-[*] Successfully formatted 
+write to block device: /dev/disk2  last written block address: 195371567
+[+] Writing fake MBR...
+16+0 records in
+16+0 records out
+16 bytes transferred in 0.044496 secs (360 bytes/sec)
+2+0 records in
+2+0 records out
+2 bytes transferred in 0.000602 secs (3322 bytes/sec)
+[*] Successfully formatted
 Please disconnect/reconnect your drive now.
 ```
 
+# A Fake Partition Table to Fake Out Windows
+
+As mentioned by Pieter [here](http://sipa.ulyssis.org/2010/02/filesystems-for-portable-disks/), Windows does not support hard disks without a partition table.  This is strange because Windows does not apply the same limitation to flash drives.
+
+To make matters worse, OS X only uses UDF disks that utilize the full disk (not just a partition).
+
+The solution, as suggested by Pieter, is to place a fake partition table (via [MBR](https://en.wikipedia.org/wiki/Master_boot_record)) in the first block of the drive, which lists a single entire-disk partition.  This works because UDF (perhaps intentionally) doesn't utilize the first block.  Unfortunately, there has been no easy way to do this, while juggling all of the other variables (such as device physical block size).
+
+format-udf writes such a fake MBR for added compatibility on Windows.
