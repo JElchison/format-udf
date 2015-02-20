@@ -224,7 +224,7 @@ LABEL=$2
 # verify this is a device, not just a file
 # `true` is so that a failure here doesn't cause entire script to exit prematurely
 mount /dev/$DEVICE 2>/dev/null || true
-[[ -b /dev/$DEVICE ]] || (echo "[-] <device> either doesn't exists or is not block special" >&2 && false)
+[[ -b /dev/$DEVICE ]] || (echo "[-] /dev/$DEVICE either doesn't exist or is not block special" >&2 && false)
 
 
 ###############################################################################
