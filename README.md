@@ -188,3 +188,5 @@ As mentioned by Pieter [here](http://sipa.ulyssis.org/2010/02/filesystems-for-po
 To make matters worse, OS X only uses UDF disks that utilize the full disk (not just a partition).
 
 The solution, as suggested by Pieter, is to place a fake partition table (via [MBR](https://en.wikipedia.org/wiki/Master_boot_record)) in the first block of the drive, which lists a single entire-disk partition.  This works because UDF (perhaps intentionally) doesn't utilize the first block.  Unfortunately, there has been no easy way to do this, while juggling all of the other variables (such as device physical block size).
+
+format-udf writes such a fake MBR for added compatibility on Windows.
