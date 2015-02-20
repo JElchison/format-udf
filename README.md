@@ -12,36 +12,38 @@ Bash script to format a block drive (hard drive or Flash drive) in UDF.  The out
 
 
 # OS Support
-Following tables detail operating system support for UDF.  Data was adapted from https://en.wikipedia.org/wiki/Universal_Disk_Format#Compatibility (as retrieved on 2014-Aug-28).
-
+Following tables detail operating system support for UDF.  Data was adapted from https://en.wikipedia.org/wiki/Universal_Disk_Format#Compatibility (as retrieved on 2015-Feb-20).
 
 ### Natively Supported
+
 Both read/write are supported unless otherwise listed below.
 
-Operating System			|Read-only				|Note
-----------------------------------------|---------------------------------------|----------------------------------------
-Mac OS X 10.5, 10.6, 10.7, 10.8, 10.9	|					|
-Windows Vista, 7, 8			|					|Referred to by Microsoft as "Live File System"
-Windows XP, Server 2003			|Read-only				|Write support available with third party utilities.
-Linux 2.6, 3.x				|UDF revisions 2.01 and before have read/write.  After 2.01, read-only.	| 
-AIX 5.2, 5.3, 6.1			|					|
-BeOS, magnussoft ZETA, Haiku		|					|
-DosBox					|					|
-eComStation, OS/2			|					|Additional fee drivers on OS/2
-NetBSD 5.0				|					|
+Operating System                             |Read-only|Note
+---------------------------------------------|---------|----------------------------------------
+Mac OS X 10.5, 10.6, 10.7, 10.8, 10.9, 10.10 |         |
+Windows Vista, 7, 8                          |         |Referred to by Microsoft as "Live File System"; Requires fake full-disk partition
+Windows XP, Server 2003                      |Read-only|Write support available with third party utilities
+Linux 2.6, 3.x                               |UDF revisions 2.01 and before have read/write.  After 2.01, read-only. | 
+AIX 5.2, 5.3, 6.1                            |         |
+BeOS, magnussoft ZETA, Haiku                 |         |
+DosBox                                       |         |
+eComStation, OS/2                            |         |Additional-fee drivers on OS/2
+NetBSD 5.0                                   |         |
 
 
 ### Supported with Third-Party Utilities
-Operating System			|Note
-----------------------------------------|-----------------------------------
-Windows 95 OSR2+, 98, ME		|Such utilities include DLA and InCD
-Windows 2000				|
+
+Operating System                        |Note
+----------------------------------------|------------------------------
+Windows 95 OSR2+, 98, Me                |Utilities include DLA and InCD
+Windows 2000                            |
 
 
 ### Not Supported
-Operating System			|Note
+
+Operating System                        |Note
 ----------------------------------------|-------------------------------------------------
-DOS, FreeDOS, Windows 3.11 or older	|Filesystems that have an ISO9660 backward compatibility structure can be read
+DOS, FreeDOS, Windows 3.11 or older     |Filesystems that have an ISO9660 backward compatibility structure can be read
 
 
 # Environment
@@ -55,6 +57,8 @@ DOS, FreeDOS, Windows 3.11 or older	|Filesystems that have an ISO9660 backward c
     * true
     * false
     * awk
+    * printf
+    * sed
     * dd
     * xxd
     * *One* of the following:  blockdev, diskutil
@@ -80,7 +84,7 @@ Simply copy format-udf.sh to a directory of your choosing.  Don't forget to make
 ```
 Example:
 ```
-./format-udf.sh sda "My External Drive"
+./format-udf.sh sda "My UDF External Drive"
 ```
 
 
