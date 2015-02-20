@@ -9,6 +9,7 @@ Bash script to format a block drive (hard drive or Flash drive) in UDF.  The out
     * UDF revision 2.01 used for maximal compatibility (see note on Linux support below)
 * Resulting file system can be read/written across multiple operating system families (Windows, OS X, and Linux)
 * Runs on any OS having a Bash environment
+* Writes a fake MBR for added compatibility on Windows
 
 
 # OS Support
@@ -179,3 +180,11 @@ write to block device: /dev/disk2  last written block address: 195371567
 [*] Successfully formatted
 Please disconnect/reconnect your drive now.
 ```
+
+# A Fake Partition Table to Fake Out Windows
+
+As mentioned by Pieter [here](http://sipa.ulyssis.org/2010/02/filesystems-for-portable-disks/), Windows does not support hard disks without a partition table.  This is strange because Windows does not apply the same limitation to flash drives.
+
+To make matters worse, OS X only uses UDF disks that utilize the full disk (not just a partition).
+
+The solution, as suggested by Pieter, is to place a fake partition table (via [MBR](https://en.wikipedia.org/wiki/Master_boot_record)) in the first block of the drive, which lists a single entire-disk partition.  This works because UDF (perhaps intentionally) doesn't utilize the first block.  Unfortunately, there has been no easy way to do this, while juggling all of the other variables (such as device physical block size).
