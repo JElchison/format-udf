@@ -138,7 +138,7 @@ Please disconnect/reconnect your drive now.
 
 On OS X:
 ```
-computer:~ user$ ./format-udf.sh disk2 "My External Drive"
+computer:~ user$ ./format-udf.sh disk2 "My UDF External Drive"
 [+] Testing dependencies...
 [+] Looking for drive listing tool... using /usr/sbin/diskutil
 [+] Looking for unmount tool... using /usr/sbin/diskutil
@@ -147,7 +147,7 @@ computer:~ user$ ./format-udf.sh disk2 "My External Drive"
 [+] Gathering drive information...
 /dev/disk2
    #:                       TYPE NAME                    SIZE       IDENTIFIER
-   0:                            My Disk                *100.0 GB   disk2
+   0:                            Old Drive              *100.0 GB   disk2
 The above-listed drive (and partitions, if any) will be completely erased.
 Type 'yes' if this is what you intend:  yes
 [+] Detecting total size...
@@ -158,20 +158,20 @@ Type 'yes' if this is what you intend:  yes
 [+] Validating detected block size...
 [+] Unmounting drive...
 Password:
-Volume My Disk on disk2 unmounted
+Unmount of all volumes on disk2 was successful
 [+] Zeroing out any existing partition table on drive...
 4096+0 records in
 4096+0 records out
-2097152 bytes transferred in 0.603065 secs (3477489 bytes/sec)
-[+] Writing fake MBR...
-12+0 records in
-12+0 records out
-12 bytes transferred in 0.000631 secs (19015 bytes/sec)
-2+0 records in
-2+0 records out
-2 bytes transferred in 0.000616 secs (3248 bytes/sec)
+2097152 bytes transferred in 0.592766 secs (3537908 bytes/sec)
 [+] Formatting /dev/disk2 ...
 write to block device: /dev/disk2  last written block address: 195371567
+[+] Writing fake MBR...
+16+0 records in
+16+0 records out
+16 bytes transferred in 0.044496 secs (360 bytes/sec)
+2+0 records in
+2+0 records out
+2 bytes transferred in 0.000602 secs (3322 bytes/sec)
 [*] Successfully formatted
 Please disconnect/reconnect your drive now.
 ```
