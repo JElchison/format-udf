@@ -89,7 +89,7 @@ Example:
 ```
 
 
-# Example usage
+### Example usage
 On Ubuntu:
 ```
 user@computer:~$ ./format-udf.sh sdg "My UDF External Drive"
