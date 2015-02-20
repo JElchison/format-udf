@@ -87,40 +87,52 @@ Example:
 # Example usage
 On Ubuntu:
 ```
-user@computer:~$ ./format-udf.sh sdb "My External Drive"
+user@computer:~$ ./format-udf.sh sdg "My UDF External Drive"
 [+] Testing dependencies...
 [+] Looking for drive listing tool... using /sbin/blockdev
 [+] Looking for unmount tool... using /bin/umount
 [+] Looking for UDF tool... using /usr/bin/mkudffs
 [+] Validating arguments...
 [+] Gathering drive information...
-Patriot Memory
 [sudo] password for user: 
+/dev/sdg: LABEL="Old Drive" TYPE="udf" 
+HTS721010G9SA00 
 RO    RA   SSZ   BSZ   StartSec            Size   Device
-rw   256   512  4096          0      4003463168   /dev/sdb
+rw   256   512  4096          0    100030242816   /dev/sdg
 The above-listed drive (and partitions, if any) will be completely erased.
 Type 'yes' if this is what you intend:  yes
-[+] Detecting native sector size...
-[+] Validating detected sector size...
+[+] Detecting total size...
+[*] Using total size of 100030242816
+[+] Validating detected total size...
+[+] Detecting physical block size...
+[*] Using block size of 512
+[+] Validating detected block size...
 [+] Unmounting drive...
-umount: /dev/sdb: not mounted
+umount: /dev/sdg: not mounted
 [+] Zeroing out any existing partition table on drive...
 4096+0 records in
 4096+0 records out
-2097152 bytes (2.1 MB) copied, 0.924472 s, 2.3 MB/s
-[+] Formatting /dev/sdb ...
+2097152 bytes (2.1 MB) copied, 0.531167 s, 3.9 MB/s
+[+] Formatting /dev/sdg ...
 start=0, blocks=64, type=RESERVED 
 start=64, blocks=12, type=VRS 
 start=76, blocks=180, type=USPACE 
 start=256, blocks=1, type=ANCHOR 
 start=257, blocks=16, type=PVDS 
 start=273, blocks=1, type=LVID 
-start=274, blocks=7818733, type=PSPACE 
-start=7819007, blocks=1, type=ANCHOR 
-start=7819008, blocks=239, type=USPACE 
-start=7819247, blocks=16, type=RVDS 
-start=7819263, blocks=1, type=ANCHOR 
-[*] Successfully formatted /dev/sdb: LABEL="My External Drive" TYPE="udf"
+start=274, blocks=195371037, type=PSPACE 
+start=195371311, blocks=1, type=ANCHOR 
+start=195371312, blocks=239, type=USPACE 
+start=195371551, blocks=16, type=RVDS 
+start=195371567, blocks=1, type=ANCHOR 
+[+] Writing fake MBR...
+16+0 records in
+16+0 records out
+16 bytes (16 B) copied, 0.00259109 s, 6.2 kB/s
+2+0 records in
+2+0 records out
+2 bytes (2 B) copied, 0.000108835 s, 18.4 kB/s
+[*] Successfully formatted /dev/sdg: LABEL="My UDF External Drive" TYPE="udf" 
 Please disconnect/reconnect your drive now.
 ```
 
