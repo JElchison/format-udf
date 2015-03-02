@@ -233,7 +233,7 @@ mount /dev/$DEVICE 2>/dev/null || true
 
 echo "[+] Gathering drive information..."
 if [[ $TOOL_DRIVE_LISTING = $TOOL_BLOCKDEV ]]; then
-    sudo blkid -c /dev/null /dev/sdg
+    sudo blkid -c /dev/null /dev/$DEVICE
     cat /sys/block/$DEVICE/device/model
     sudo blockdev --report | egrep "(Device|$DEVICE)"
 elif [[ $TOOL_DRIVE_LISTING = $TOOL_DISKUTIL ]]; then
