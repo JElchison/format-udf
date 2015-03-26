@@ -190,3 +190,8 @@ To make matters worse, OS X only uses UDF disks that utilize the full disk (not 
 The solution, as suggested by Pieter, is to place a fake partition table (via [MBR](https://en.wikipedia.org/wiki/Master_boot_record)) in the first block of the drive, which lists a single entire-disk partition.  This works because UDF (perhaps intentionally) doesn't utilize the first block.  Unfortunately, there has been no easy way to do this, while juggling all of the other variables (such as device physical block size).
 
 format-udf writes such a fake MBR for added compatibility on Windows.
+
+
+# See Also
+
+[Sharing a Hard/Flash Drive Across Windows. OS X, and Linux with UDF](https://j0nam1el.wordpress.com/2015/02/20/sharing-a-hardflash-drive-across-windows-os-x-and-linux-with-udf/)
