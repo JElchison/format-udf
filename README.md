@@ -50,17 +50,7 @@ DOS, FreeDOS, Windows 3.11 or older     |Filesystems that have an ISO9660 backwa
 # Environment
 * Any OS having a Bash environment
 * The following tools must be installed, executable, and in the PATH:
-    * cat
-    * grep
-    * egrep
-    * mount
-    * test
-    * true
-    * false
-    * awk
     * printf
-    * sed
-    * dd
     * xxd
     * *One* of the following:  blockdev, diskutil
     * *One* of the following:  umount, diskutil
@@ -70,7 +60,7 @@ DOS, FreeDOS, Windows 3.11 or older     |Filesystems that have an ISO9660 backwa
 # Prerequisites
 To install necessary prerequisites on Ubuntu:
 
-    sudo apt-get install udftools
+    sudo apt-get install udftools coreutils vim-common
 
 
 # Installation
@@ -194,4 +184,4 @@ format-udf writes such a fake MBR for added compatibility on Windows.
 
 # See Also
 
-[Sharing a Hard/Flash Drive Across Windows. OS X, and Linux with UDF](https://j0nam1el.wordpress.com/2015/02/20/sharing-a-hardflash-drive-across-windows-os-x-and-linux-with-udf/)
+[Sharing a Hard/Flash Drive across Windows, OS X, and Linux with UDF](https://j0nam1el.wordpress.com/2015/02/20/sharing-a-hardflash-drive-across-windows-os-x-and-linux-with-udf/)
