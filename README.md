@@ -184,4 +184,4 @@ format-udf writes such a fake MBR for added compatibility on Windows.
 
 # See Also
 
-[Sharing a Hard/Flash Drive across Windows, OS X, and Linux with UDF](https://j0nam1el.wordpress.com/2015/02/20/sharing-a-hardflash-drive-across-windows-os-x-and-linux-with-udf/)
+[Sharing a Hard/Flash Drive Across Windows, OS X, and Linux with UDF](https://j0nam1el.wordpress.com/2015/02/20/sharing-a-hardflash-drive-across-windows-os-x-and-linux-with-udf/)
