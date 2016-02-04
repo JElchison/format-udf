@@ -334,7 +334,7 @@ if [[ $TOOL_UDF = $TOOL_MKUDFFS ]]; then
     # --vid        - volume identifier
     # --media-type - "hd" type covers both hard drives and USB drives
     # --utf8       - encode file names in UTF8
-    (sudo mkudffs --blocksize=$BLOCK_SIZE --udfrev=0x0201 --lvid="$LABEL" --vid="$LABEL" --media-type=hd --utf8 /dev/$DEVICE) || (echo "[-] Format failed!" >&2 && false)
+    (sudo time sh -c "mkudffs --blocksize=$BLOCK_SIZE --udfrev=0x0201 --lvid="$LABEL" --vid="$LABEL" --media-type=hd --utf8 /dev/$DEVICE) || (echo "[-] Format failed!" >&2 && false)"
 elif [[ $TOOL_UDF = $TOOL_NEWFS_UDF ]]; then
     # -b    - the size of blocks in bytes. should be the same as the drive's physical block size.
     # -m    - "blk" type covers both hard drives and USB drives
@@ -342,7 +342,7 @@ elif [[ $TOOL_UDF = $TOOL_NEWFS_UDF ]]; then
     # -r    - the udf revision to use.  2.01 is the latest revision available that supports writing in Linux.
     # -v    - volume identifier
     # --enc - encode volume name in UTF8
-    (sudo newfs_udf -b $BLOCK_SIZE -m blk -t ow -r 2.01 -v "$LABEL" --enc utf8 /dev/$DEVICE) || (echo "[-] Format failed!" >&2 && false)
+    (sudo time sh -c "newfs_udf -b $BLOCK_SIZE -m blk -t ow -r 2.01 -v "$LABEL" --enc utf8 /dev/$DEVICE) || (echo "[-] Format failed!" >&2 && false)"
 else
     echo "[-] Internal error 3" >&2
     exit 1
