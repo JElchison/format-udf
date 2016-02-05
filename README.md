@@ -222,6 +222,8 @@ The solution, as suggested by Pieter, is to place a fake partition table (via [M
 
 format-udf writes such a fake MBR for added compatibility on Windows.
 
+If this is not what you desire, you can disable the MBR with `-p none`.
+
 
 # See Also
 
