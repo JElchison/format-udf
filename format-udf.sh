@@ -93,7 +93,7 @@ Usage:  $0 [-b BLOCK_SIZE] [-f] [-p PARTITION_TYPE] [-w WIPE_METHOD] drive label
     label
         Label to apply to formatted drive.
 
-Example:  $0 sda "My External Drive"
+Example:  $0 sdg "My External Drive"
 EOF
 }
 
