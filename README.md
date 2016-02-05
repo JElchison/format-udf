@@ -71,11 +71,50 @@ Simply copy format-udf.sh to a directory of your choosing.  Don't forget to make
 
 # Usage
 ```
-./format-udf.sh <drive> <label>
-```
-Example:
-```
-./format-udf.sh sda "My UDF External Drive"
+Usage:  ./format-udf.sh [-b BLOCK_SIZE] [-f] [-p PARTITION_TYPE] [-w WIPE_METHOD] drive label
+
+    -b BLOCK_SIZE
+        Block size to be used during format operation.
+        If absent, defaults to value reported by blockdev/diskutil.
+        This is useful in light of the following Linux kernel bug:
+            https://bugzilla.kernel.org/show_bug.cgi?id=102271
+        See also:
+            https://github.com/JElchison/format-udf/issues/13
+
+    -f
+        Forces non-interactive mode.  Useful for scripting.
+        Please use with caution, as no user confirmation is given.
+
+    -p PARTITION_TYPE
+        Partition type to set during format operation.
+        Currently supported types include:  mbr, none
+            mbr  - Master boot record (default)
+            none - Do not modify partitions
+        If absent, defaults to 'mbr'.
+        See also:
+            https://github.com/JElchison/format-udf#a-fake-partition-table-to-fake-out-windows
+
+    -w WIPE_METHOD
+        Wipe method to be used before format operation.
+        Currently supported types include:  quick, zero, scrub
+            quick - Quick method (default)
+            zero  - Write zeros to the entire drive
+            scrub - Iteratively writes patterns on drive
+                    to make retrieving the data more difficult.
+                    Requires 'scrub' to be executable and in the PATH.
+                    See also http://linux.die.net/man/1/scrub
+        If absent, defaults to 'quick'.
+        Note:  'zero' and 'scrub' methods will take a long time.
+
+    drive
+        Drive to format.  Should be of the form:
+          * sdx   (Linux, where 'x' is a letter) or
+          * diskN (OS X,  where 'N' is a number)
+
+    label
+        Label to apply to formatted drive.
+
+Example:  ./format-udf.sh sda "My External Drive"
 ```
 
 
@@ -87,6 +126,7 @@ user@computer:~$ ./format-udf.sh sdg "My UDF External Drive"
 [+] Looking for drive listing tool... using /sbin/blockdev
 [+] Looking for unmount tool... using /bin/umount
 [+] Looking for UDF tool... using /usr/bin/mkudffs
+[+] Parsing options...
 [+] Validating arguments...
 [+] Gathering drive information...
 [sudo] password for user: 
@@ -127,7 +167,7 @@ start=195371567, blocks=1, type=ANCHOR
 2+0 records in
 2+0 records out
 2 bytes (2 B) copied, 0.000108835 s, 18.4 kB/s
-[*] Successfully formatted /dev/sdg: LABEL="My UDF External Drive" TYPE="udf" 
+[+] Successfully formatted /dev/sdg: LABEL="My UDF External Drive" TYPE="udf" 
 Please disconnect/reconnect your drive now.
 ```
 
@@ -138,6 +178,7 @@ computer:~ user$ ./format-udf.sh disk2 "My UDF External Drive"
 [+] Looking for drive listing tool... using /usr/sbin/diskutil
 [+] Looking for unmount tool... using /usr/sbin/diskutil
 [+] Looking for UDF tool... using /sbin/newfs_udf
+[+] Parsing options...
 [+] Validating arguments...
 [+] Gathering drive information...
 /dev/disk2
@@ -167,7 +208,7 @@ write to block device: /dev/disk2  last written block address: 195371567
 2+0 records in
 2+0 records out
 2 bytes transferred in 0.000602 secs (3322 bytes/sec)
-[*] Successfully formatted
+[+] Successfully formatted
 Please disconnect/reconnect your drive now.
 ```
 

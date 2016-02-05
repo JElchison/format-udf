@@ -4,9 +4,9 @@
 #
 # Bash script to format a block drive (hard drive or Flash drive) in UDF.  The output is a drive that can be used for reading/writing across multiple operating system families:  Windows, OS X, and Linux.  This script should be capable of running in OS X or in Linux.
 #
-# Version 1.1.2
+# Version 1.2.0
 #
-# Copyright (C) 2015 Jonathan Elchison <JElchison@gmail.com>
+# Copyright (C) 2016 Jonathan Elchison <JElchison@gmail.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -35,6 +35,8 @@ set -euf -o pipefail
 HPC=255
 # maximum number of sectors per track
 SPT=63
+# reset in case getopts has been used previously in the shell
+OPTIND=1
 
 
 ###############################################################################
@@ -47,8 +49,52 @@ SPT=63
 # Returns:
 #   None
 print_usage() {
-    echo "Usage:    $0 <drive> <label>" >&2
-    echo "Example:  $0 sda \"My External Drive\"" >&2
+    cat <<EOF >&2
+Usage:  $0 [-b BLOCK_SIZE] [-f] [-p PARTITION_TYPE] [-w WIPE_METHOD] drive label
+
+    -b BLOCK_SIZE
+        Block size to be used during format operation.
+        If absent, defaults to value reported by blockdev/diskutil.
+        This is useful in light of the following Linux kernel bug:
+            https://bugzilla.kernel.org/show_bug.cgi?id=102271
+        See also:
+            https://github.com/JElchison/format-udf/issues/13
+
+    -f
+        Forces non-interactive mode.  Useful for scripting.
+        Please use with caution, as no user confirmation is given.
+
+    -p PARTITION_TYPE
+        Partition type to set during format operation.
+        Currently supported types include:  mbr, none
+            mbr  - Master boot record (default)
+            none - Do not modify partitions
+        If absent, defaults to 'mbr'.
+        See also:
+            https://github.com/JElchison/format-udf#a-fake-partition-table-to-fake-out-windows
+
+    -w WIPE_METHOD
+        Wipe method to be used before format operation.
+        Currently supported types include:  quick, zero, scrub
+            quick - Quick method (default)
+            zero  - Write zeros to the entire drive
+            scrub - Iteratively writes patterns on drive
+                    to make retrieving the data more difficult.
+                    Requires 'scrub' to be executable and in the PATH.
+                    See also http://linux.die.net/man/1/scrub
+        If absent, defaults to 'quick'.
+        Note:  'zero' and 'scrub' methods will take a long time.
+
+    drive
+        Drive to format.  Should be of the form:
+          * sdx   (Linux, where 'x' is a letter) or
+          * diskN (OS X,  where 'N' is a number)
+
+    label
+        Label to apply to formatted drive.
+
+Example:  $0 sda "My External Drive"
+EOF
 }
 
 # Prints hex representation of CHS (cylinder-head-sector) to stdout
@@ -203,6 +249,73 @@ echo " using $TOOL_UDF"
 
 
 ###############################################################################
+# set default options
+###############################################################################
+
+ARG_BLOCK_SIZE=
+FORCE=
+PARTITION_TYPE=mbr
+WIPE_METHOD=quick
+
+
+###############################################################################
+# parse options
+###############################################################################
+
+echo "[+] Parsing options..."
+
+while getopts "b:fp:w:" opt; do
+    case $opt in
+        b)
+            ARG_BLOCK_SIZE="$OPTARG"
+            # no need to validate this here, as BLOCK_SIZE is validated below (before anything destructive happens)
+            ;;
+        f)
+            FORCE=1
+            ;;
+        p)
+            PARTITION_TYPE="$OPTARG"
+            if [[ "$PARTITION_TYPE" != "mbr" ]] &&
+               [[ "$PARTITION_TYPE" != "none" ]]; then
+                echo "[-] Invalid partition type: $PARTITION_TYPE" >&2
+                print_usage
+                exit 1
+            fi
+            ;;
+        w)
+            WIPE_METHOD="$OPTARG"
+            if [[ "$WIPE_METHOD" != "quick" ]] &&
+               [[ "$WIPE_METHOD" != "zero" ]] &&
+               [[ "$WIPE_METHOD" != "scrub" ]]; then
+                echo "[-] Invalid wipe method: $WIPE_METHOD" >&2
+                print_usage
+                exit 1
+            fi
+            if [[ "$WIPE_METHOD" = "scrub" ]]; then
+                if [[ ! -x $(which scrub) ]]; then
+                    echo "[-] Dependencies unmet.  Please verify that the following are installed, executable, and in the PATH:  scrub" >&2
+                    exit 1
+                fi
+            fi
+            ;;
+        \?)
+            echo "[-] Invalid option: -$OPTARG" >&2
+            print_usage
+            exit 1
+            ;;
+        :)
+            echo "[-] Option -$OPTARG requires an argument" >&2
+            print_usage
+            exit 1
+            ;;
+    esac
+done
+
+shift $((OPTIND-1))
+([[ "$1" = "--" ]] 2>/dev/null && shift) || true
+
+
+###############################################################################
 # validate arguments
 ###############################################################################
 
@@ -228,7 +341,7 @@ mount /dev/$DEVICE 2>/dev/null || true
 
 
 ###############################################################################
-# verify with user
+# print drive information
 ###############################################################################
 
 echo "[+] Gathering drive information..."
@@ -243,14 +356,20 @@ else
     exit 1
 fi
 
-# give the user a chance to realize his/her mistake
-echo "The above-listed drive (and partitions, if any) will be completely erased."
-# TODO add '-f' command-line option to bypass this interactive step
-read -p "Type 'yes' if this is what you intend:  " YES_CASE
-YES=$(echo $YES_CASE | tr '[:upper:]' '[:lower:]')
-if [[ $YES != "yes" ]]; then
-    echo "[-] Exiting without changes to /dev/$DEVICE." >&2
-    exit 1
+
+###############################################################################
+# verify with user
+###############################################################################
+
+if [[ -z $FORCE ]]; then
+    # give the user a chance to realize his/her mistake
+    echo "The above-listed drive (and partitions, if any) will be completely erased."
+    read -p "Type 'yes' if this is what you intend:  " YES_CASE
+    YES=$(echo $YES_CASE | tr '[:upper:]' '[:lower:]')
+    if [[ $YES != "yes" ]]; then
+        echo "[-] Exiting without changes to /dev/$DEVICE." >&2
+        exit 1
+    fi
 fi
 
 
@@ -279,21 +398,26 @@ echo "[+] Validating detected total size..."
 # gather information - physical block size
 ###############################################################################
 
-echo "[+] Detecting physical block size..."
-if [[ $TOOL_DRIVE_LISTING = $TOOL_BLOCKDEV ]]; then
-    BLOCK_SIZE=$(sudo blockdev --getpbsz /dev/$DEVICE)
-elif [[ -x $TOOL_DISKUTIL ]]; then
-    BLOCK_SIZE=$(diskutil info $DEVICE | grep -i 'Device Block Size' | awk -F ':' '{print $2}' | awk '{print $1}')
+if [[ -z $ARG_BLOCK_SIZE ]]; then
+    echo "[+] Detecting physical block size..."
+    if [[ $TOOL_DRIVE_LISTING = $TOOL_BLOCKDEV ]]; then
+        BLOCK_SIZE=$(sudo blockdev --getpbsz /dev/$DEVICE)
+    elif [[ -x $TOOL_DISKUTIL ]]; then
+        BLOCK_SIZE=$(diskutil info $DEVICE | grep -i 'Device Block Size' | awk -F ':' '{print $2}' | awk '{print $1}')
+    else
+        echo "[-] Cannot detect physical block size" >&2
+        exit 1
+    fi
 else
-    echo "[-] Cannot detect physical block size" >&2
-    exit 1
+    echo "[+] Overriding physical block size..."
+    BLOCK_SIZE=$ARG_BLOCK_SIZE
 fi
 echo "[*] Using block size of $BLOCK_SIZE"
 
 # validate that $BLOCK_SIZE is numeric > 0
 echo "[+] Validating detected block size..."
-(echo "$BLOCK_SIZE" | egrep -q '^[0-9]+$') || (echo "[-] Could not detect valid block size.  Exiting without changes to /dev/$DEVICE." >&2 && false)
-[[ $BLOCK_SIZE -gt 0 ]] || (echo "[-] Could not detect valid block size.  Exiting without changes to /dev/$DEVICE." >&2 && false)
+(echo "$BLOCK_SIZE" | egrep -q '^[0-9]+$') || (echo "[-] Invalid block size.  Exiting without changes to /dev/$DEVICE." >&2 && false)
+[[ $BLOCK_SIZE -gt 0 ]] || (echo "[-] Invalid block size.  Exiting without changes to /dev/$DEVICE." >&2 && false)
 
 
 ###############################################################################
@@ -314,7 +438,30 @@ fi
 
 
 ###############################################################################
-# zero out partition table
+# optionally wipe drive
+###############################################################################
+
+case $WIPE_METHOD in
+    quick)
+        # nothing to do
+        ;;
+    zero)
+        echo "[+] Overwriting drive with zeros.  This will likely take a LONG time..."
+        sudo dd if=/dev/zero of=/dev/$DEVICE bs=$BLOCK_SIZE || true
+        ;;
+    scrub)
+        echo "[+] Scrubbing drive with random patterns.  This will likely take a LONG time..."
+        sudo scrub -f /dev/$DEVICE
+        ;;
+    *)
+        echo "[-] Internal error 3" >&2
+        exit 1
+        ;;
+esac
+
+
+###############################################################################
+# zero out partition table (required even without fake partition table)
 ###############################################################################
 
 echo "[+] Zeroing out any existing partition table on drive..."
@@ -344,20 +491,31 @@ elif [[ $TOOL_UDF = $TOOL_NEWFS_UDF ]]; then
     # --enc - encode volume name in UTF8
     (sudo newfs_udf -b $BLOCK_SIZE -m blk -t ow -r 2.01 -v "$LABEL" --enc utf8 /dev/$DEVICE) || (echo "[-] Format failed!" >&2 && false)
 else
-    echo "[-] Internal error 3" >&2
+    echo "[-] Internal error 4" >&2
     exit 1
 fi
 
 
 ###############################################################################
-# write fake MBR (for added compatibility on Windows)
+# write fake partition table (for added compatibility on Windows)
 ###############################################################################
 
-echo "[+] Writing fake MBR..."
-# first block has already been zero'd.  start by writing the (only) partition entry at its correct offset.
-entire_disk_partition_entry $TOTAL_SIZE $BLOCK_SIZE | xxd -r -p | sudo dd of=/dev/$DEVICE bs=1 seek=446 count=16
-# Boot signature at the end of the block
-echo -n 55aa | xxd -r -p | sudo dd of=/dev/$DEVICE bs=1 seek=510 count=2
+case $PARTITION_TYPE in
+    none)
+        # nothing to do
+        ;;
+    mbr)
+        echo "[+] Writing fake MBR..."
+        # first block has already been zero'd.  start by writing the (only) partition entry at its correct offset.
+        entire_disk_partition_entry $TOTAL_SIZE $BLOCK_SIZE | xxd -r -p | sudo dd of=/dev/$DEVICE bs=1 seek=446 count=16
+        # Boot signature at the end of the block
+        echo -n 55aa | xxd -r -p | sudo dd of=/dev/$DEVICE bs=1 seek=510 count=2
+        ;;
+    *)
+        echo "[-] Internal error 5" >&2
+        exit 1
+        ;;
+esac
 
 
 ###############################################################################
@@ -367,7 +525,7 @@ echo -n 55aa | xxd -r -p | sudo dd of=/dev/$DEVICE bs=1 seek=510 count=2
 # following call to blkid sometimes exits with failure, even though the drive is formatted properly.
 # `true` is so that a failure here doesn't cause entire script to exit prematurely
 SUMMARY=$(sudo blkid -c /dev/null /dev/$DEVICE 2>/dev/null) || true
-echo "[*] Successfully formatted $SUMMARY"
+echo "[+] Successfully formatted $SUMMARY"
 
 # TODO find a way to auto-mount (`sudo mount -a` doesn't work).  in the meantime...
 echo "Please disconnect/reconnect your drive now."
