@@ -227,4 +227,6 @@ If this is not what you desire, you can disable the MBR with `-p none`.
 
 # See Also
 
-[Sharing a Hard/Flash Drive Across Windows, OS X, and Linux with UDF](https://j0nam1el.wordpress.com/2015/02/20/sharing-a-hardflash-drive-across-windows-os-x-and-linux-with-udf/)
+* [Sharing a Hard/Flash Drive Across Windows, OS X, and Linux with UDF](https://j0nam1el.wordpress.com/2015/02/20/sharing-a-hardflash-drive-across-windows-os-x-and-linux-with-udf/)
+* [Universal Disk Format on Wikipedia](https://en.wikipedia.org/wiki/Universal_Disk_Format)
+* [Wenguang's Introduction to Universal Disk Format (UDF)](https://sites.google.com/site/udfintro/)
