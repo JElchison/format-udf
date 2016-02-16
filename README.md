@@ -9,7 +9,10 @@ Bash script to format a block drive (hard drive or Flash drive) in UDF.  The out
     * UDF revision 2.01 used for maximal compatibility (see note on Linux support below)
 * Resulting file system can be read/written across multiple operating system families (Windows, OS X, and Linux)
 * Runs on any OS having a Bash environment
-* Writes a fake MBR for added compatibility on Windows
+* Ability to override detected device block size
+* Option to force non-interactive mode (useful for scripting)
+* Optionally wipes drive before formatting
+* Writes a fake MBR for added compatibility on Windows (optionally disabled)
 
 
 # OS Support
