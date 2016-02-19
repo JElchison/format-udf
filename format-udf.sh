@@ -366,17 +366,16 @@ trap exit_with_no_changes EXIT
 PARENT_DEVICE=$(echo "$DEVICE" | sed -r 's/^(([hs]d[a-z])([1-9][0-9]*)?|(disk[0-9]+)(s[1-9][0-9]*)?)$/\2\4/')
 
 # validate parent device identifier (must be entire device)
-(echo "$PARENT_DEVICE" | egrep -q '^([hs]d[a-z]|disk[0-9]+)$') || (echo "[-] <device> is of invalid form (invalid parent device).  Exiting without changes to /dev/$DEVICE." >&2 && false)
+(echo "$PARENT_DEVICE" | egrep -q '^([hs]d[a-z]|disk[0-9]+)$') || (echo "[-] <device> is of invalid form (invalid parent device)" >&2 && false)
 
 # verify parent is a device, not just a file
-[[ -b /dev/$PARENT_DEVICE ]] || (echo "[-] /dev/$PARENT_DEVICE either doesn't exist or is not block special.  Exiting without changes to /dev/$DEVICE." >&2 && false)
+[[ -b /dev/$PARENT_DEVICE ]] || (echo "[-] /dev/$PARENT_DEVICE either doesn't exist or is not block special" >&2 && false)
 
 # validate configuration
 if [[ "$PARENT_DEVICE" != "$DEVICE" ]] && [[ "$PARTITION_TYPE" != "none" ]]; then
     echo "[-] You are attempting to format a single partition (as opposed to entire device)." >&2
     echo "[-] Partition type '$PARTITION_TYPE' incompatible with single partition formatting." >&2
     echo "[-] Please specify an entire device or partition type of 'none'." >&2
-    echo "[-] Exiting without changes to /dev/$DEVICE." >&2
     exit 1
 fi
 
@@ -410,7 +409,6 @@ if [[ -z $FORCE ]]; then
         read -p "Type 'yes' if this is what you intend:  " YES_CASE
         YES=$(echo $YES_CASE | tr '[:upper:]' '[:lower:]')
         if [[ $YES != "yes" ]]; then
-            echo "[-] Exiting without changes to /dev/$DEVICE." >&2
             exit 1
         fi
     fi
