@@ -331,13 +331,36 @@ fi
 DEVICE=$1
 LABEL=$2
 
-# verify that DEVICE doesn't have partition number on end, or that it's in OS X format
-(echo "$DEVICE" | egrep -q '^([hs]d[a-z]|disk[0-9]+)$') || (echo "[-] <device> is of invalid form" >&2 && false)
+# validate device identifier (may be partition)
+(echo "$DEVICE" | egrep -q '^(([hs]d[a-z])([1-9][0-9]*)?|(disk[0-9]+)(s[1-9][0-9]*)?)$') || (echo "[-] <device> is of invalid form" >&2 && false)
 
 # verify this is a device, not just a file
 # `true` is so that a failure here doesn't cause entire script to exit prematurely
 mount /dev/$DEVICE 2>/dev/null || true
 [[ -b /dev/$DEVICE ]] || (echo "[-] /dev/$DEVICE either doesn't exist or is not block special" >&2 && false)
+
+
+###############################################################################
+# validate parent device
+###############################################################################
+
+# extract parent device identifier
+PARENT_DEVICE=$(echo "$DEVICE" | sed -r 's/^(([hs]d[a-z])([1-9][0-9]*)?|(disk[0-9]+)(s[1-9][0-9]*)?)$/\2\4/')
+
+# validate parent device identifier (must be entire device)
+(echo "$PARENT_DEVICE" | egrep -q '^([hs]d[a-z]|disk[0-9]+)$') || (echo "[-] <device> is of invalid form (invalid parent device).  Exiting without changes to /dev/$DEVICE." >&2 && false)
+
+# verify parent is a device, not just a file
+[[ -b /dev/$PARENT_DEVICE ]] || (echo "[-] /dev/$PARENT_DEVICE either doesn't exist or is not block special.  Exiting without changes to /dev/$DEVICE." >&2 && false)
+
+# validate configuration
+if [[ "$PARENT_DEVICE" != "$DEVICE" ]] && [[ "$PARTITION_TYPE" != "none" ]]; then
+    echo "[-] You are attempting to format a single partition (as opposed to entire device)." >&2
+    echo "[-] Partition type '$PARTITION_TYPE' incompatible with single partition formatting." >&2
+    echo "[-] Please specify an entire device or partition type of 'none'." >&2
+    echo "[-] Exiting without changes to /dev/$DEVICE." >&2
+    exit 1
+fi
 
 
 ###############################################################################
@@ -347,7 +370,7 @@ mount /dev/$DEVICE 2>/dev/null || true
 echo "[+] Gathering drive information..."
 if [[ $TOOL_DRIVE_LISTING = $TOOL_BLOCKDEV ]]; then
     sudo blkid -c /dev/null /dev/$DEVICE || true
-    cat /sys/block/$DEVICE/device/model
+    cat /sys/block/$PARENT_DEVICE/device/model
     sudo blockdev --report | egrep "(Device|$DEVICE)"
 elif [[ $TOOL_DRIVE_LISTING = $TOOL_DISKUTIL ]]; then
     diskutil list $DEVICE
@@ -362,6 +385,18 @@ fi
 ###############################################################################
 
 if [[ -z $FORCE ]]; then
+    if [[ "$PARENT_DEVICE" != "$DEVICE" ]]; then
+        echo "You are attempting to format a single partition (as opposed to entire device)."
+        echo "For maximal compatibility, the recommendation is to format the entire device."
+        echo "If you continue, the resultant UDF partition will not be recognized on OS X."
+        read -p "Type 'yes' if this is what you intend:  " YES_CASE
+        YES=$(echo $YES_CASE | tr '[:upper:]' '[:lower:]')
+        if [[ $YES != "yes" ]]; then
+            echo "[-] Exiting without changes to /dev/$DEVICE." >&2
+            exit 1
+        fi
+    fi
+
     # give the user a chance to realize his/her mistake
     echo "The above-listed drive (and partitions, if any) will be completely erased."
     read -p "Type 'yes' if this is what you intend:  " YES_CASE
