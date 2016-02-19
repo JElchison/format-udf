@@ -352,7 +352,7 @@ if [[ $TOOL_DRIVE_LISTING = $TOOL_BLOCKDEV ]]; then
 elif [[ $TOOL_DRIVE_LISTING = $TOOL_DISKUTIL ]]; then
     diskutil list $DEVICE
 else
-    echo "[-] Internal error 1" >&2
+    echo "[-] Internal error 1.  Exiting without changes to /dev/$DEVICE." >&2
     exit 1
 fi
 
@@ -383,7 +383,7 @@ if [[ $TOOL_DRIVE_LISTING = $TOOL_BLOCKDEV ]]; then
 elif [[ -x $TOOL_DISKUTIL ]]; then
     TOTAL_SIZE=$(diskutil info $DEVICE | grep -i 'Total Size' | awk -F ':' '{print $2}' | egrep -oi '\([0-9]+ B' | sed 's/[^0-9]//g')
 else
-    echo "[-] Cannot detect total size" >&2
+    echo "[-] Cannot detect total size.  Exiting without changes to /dev/$DEVICE." >&2
     exit 1
 fi
 echo "[*] Using total size of $TOTAL_SIZE"
@@ -405,7 +405,7 @@ if [[ -z $ARG_BLOCK_SIZE ]]; then
     elif [[ -x $TOOL_DISKUTIL ]]; then
         BLOCK_SIZE=$(diskutil info $DEVICE | grep -i 'Device Block Size' | awk -F ':' '{print $2}' | awk '{print $1}')
     else
-        echo "[-] Cannot detect physical block size" >&2
+        echo "[-] Cannot detect physical block size.  Exiting without changes to /dev/$DEVICE." >&2
         exit 1
     fi
 else
