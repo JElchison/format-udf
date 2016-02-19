@@ -517,8 +517,8 @@ esac
 # zero out partition table (required even without fake partition table)
 ###############################################################################
 
-echo "[+] Zeroing out any existing partition table on drive..."
-# 4096 was arbitrarily chosen to be "big enough" to delete first chunk of disk
+echo "[+] Zeroing out first chunk of device..."
+# 4096 was arbitrarily chosen to be "big enough" to delete first chunk of device
 sudo dd if=/dev/zero of=/dev/$DEVICE bs=$BLOCK_SIZE count=4096
 
 
