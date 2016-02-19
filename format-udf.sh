@@ -97,6 +97,7 @@ Example:  $0 sdg "My External Drive"
 EOF
 }
 
+
 # Prints hex representation of CHS (cylinder-head-sector) to stdout
 # Arguments:
 #   Logical block address (LBA)
@@ -112,6 +113,7 @@ function lba_to_chs {
     printf "%02x%02x%02x" $H $((($C_HI<<6)|$S)) $C_LO
 }
 
+
 # Prints hex representation of value in host byte order
 # Arguments:
 #   32-bit integer
@@ -126,6 +128,7 @@ function ntohl {
         printf "%08x" $1 | tail -c 8 | sed -E 's/(..)/\1 /g' | awk '{print $4 $3 $2 $1}'
     fi
 }
+
 
 # Prints hex representation of entire-disk partition entry.  Reference:
 # https://en.wikipedia.org/wiki/Master_boot_record
@@ -167,6 +170,18 @@ function entire_disk_partition_entry {
         echo -n "ffffffff"
     else
         ntohl $MAX_LBA
+    fi
+}
+
+
+# Prints message assuring user that $DEVICE has not been changed
+# Arguments:
+#   Device
+# Returns:
+#   None
+function exit_with_no_changes {
+    if [[ -n "$DEVICE" ]]; then
+        echo "[*] Exiting without changes to /dev/$DEVICE" >&2
     fi
 }
 
@@ -264,7 +279,7 @@ WIPE_METHOD=quick
 
 echo "[+] Parsing options..."
 
-while getopts "b:fp:w:" opt; do
+while getopts ":b:fp:w:" opt; do
     case $opt in
         b)
             ARG_BLOCK_SIZE="$OPTARG"
@@ -299,12 +314,12 @@ while getopts "b:fp:w:" opt; do
             fi
             ;;
         \?)
-            echo "[-] Invalid option: -$OPTARG" >&2
+            echo "[-] Invalid option '-$OPTARG'" >&2
             print_usage
             exit 1
             ;;
         :)
-            echo "[-] Option -$OPTARG requires an argument" >&2
+            echo "[-] Option '-$OPTARG' requires an argument" >&2
             print_usage
             exit 1
             ;;
@@ -332,12 +347,15 @@ DEVICE=$1
 LABEL=$2
 
 # validate device identifier (may be partition)
-(echo "$DEVICE" | egrep -q '^(([hs]d[a-z])([1-9][0-9]*)?|(disk[0-9]+)(s[1-9][0-9]*)?)$') || (echo "[-] <device> is of invalid form" >&2 && false)
+(echo "$DEVICE" | egrep -q '^(([hs]d[a-z])([1-9][0-9]*)?|(disk[0-9]+)(s[1-9][0-9]*)?)$') || (echo "[-] <device> is of invalid form" >&2; false)
 
 # verify this is a device, not just a file
 # `true` is so that a failure here doesn't cause entire script to exit prematurely
 mount /dev/$DEVICE 2>/dev/null || true
-[[ -b /dev/$DEVICE ]] || (echo "[-] /dev/$DEVICE either doesn't exist or is not block special" >&2 && false)
+[[ -b /dev/$DEVICE ]] || (echo "[-] /dev/$DEVICE either doesn't exist or is not block special" >&2; false)
+
+# provide assuring exit message
+trap exit_with_no_changes EXIT
 
 
 ###############################################################################
@@ -402,7 +420,6 @@ if [[ -z $FORCE ]]; then
     read -p "Type 'yes' if this is what you intend:  " YES_CASE
     YES=$(echo $YES_CASE | tr '[:upper:]' '[:lower:]')
     if [[ $YES != "yes" ]]; then
-        echo "[-] Exiting without changes to /dev/$DEVICE." >&2
         exit 1
     fi
 fi
@@ -425,8 +442,8 @@ echo "[*] Using total size of $TOTAL_SIZE"
 
 # validate that $TOTAL_SIZE is numeric > 0
 echo "[+] Validating detected total size..."
-(echo "$TOTAL_SIZE" | egrep -q '^[0-9]+$') || (echo "[-] Could not detect valid total size.  Exiting without changes to /dev/$DEVICE." >&2 && false)
-[[ $TOTAL_SIZE -gt 0 ]] || (echo "[-] Could not detect valid total size.  Exiting without changes to /dev/$DEVICE." >&2 && false)
+(echo "$TOTAL_SIZE" | egrep -q '^[0-9]+$') || (echo "[-] Could not detect valid total size" >&2; false)
+[[ $TOTAL_SIZE -gt 0 ]] || (echo "[-] Could not detect valid total size" >&2; false)
 
 
 ###############################################################################
@@ -451,8 +468,8 @@ echo "[*] Using block size of $BLOCK_SIZE"
 
 # validate that $BLOCK_SIZE is numeric > 0
 echo "[+] Validating detected block size..."
-(echo "$BLOCK_SIZE" | egrep -q '^[0-9]+$') || (echo "[-] Invalid block size.  Exiting without changes to /dev/$DEVICE." >&2 && false)
-[[ $BLOCK_SIZE -gt 0 ]] || (echo "[-] Invalid block size.  Exiting without changes to /dev/$DEVICE." >&2 && false)
+(echo "$BLOCK_SIZE" | egrep -q '^[0-9]+$') || (echo "[-] Invalid block size" >&2; false)
+[[ $BLOCK_SIZE -gt 0 ]] || (echo "[-] Invalid block size" >&2; false)
 
 
 ###############################################################################
@@ -475,6 +492,9 @@ fi
 ###############################################################################
 # optionally wipe drive
 ###############################################################################
+
+# this is where we start making changes to the drive
+trap - EXIT
 
 case $WIPE_METHOD in
     quick)
@@ -516,7 +536,7 @@ if [[ $TOOL_UDF = $TOOL_MKUDFFS ]]; then
     # --vid        - volume identifier
     # --media-type - "hd" type covers both hard drives and USB drives
     # --utf8       - encode file names in UTF8
-    (sudo mkudffs --blocksize=$BLOCK_SIZE --udfrev=0x0201 --lvid="$LABEL" --vid="$LABEL" --media-type=hd --utf8 /dev/$DEVICE) || (echo "[-] Format failed!" >&2 && false)
+    (sudo mkudffs --blocksize=$BLOCK_SIZE --udfrev=0x0201 --lvid="$LABEL" --vid="$LABEL" --media-type=hd --utf8 /dev/$DEVICE) || (echo "[-] Format failed!" >&2; false)
 elif [[ $TOOL_UDF = $TOOL_NEWFS_UDF ]]; then
     # -b    - the size of blocks in bytes. should be the same as the drive's physical block size.
     # -m    - "blk" type covers both hard drives and USB drives
@@ -524,7 +544,7 @@ elif [[ $TOOL_UDF = $TOOL_NEWFS_UDF ]]; then
     # -r    - the udf revision to use.  2.01 is the latest revision available that supports writing in Linux.
     # -v    - volume identifier
     # --enc - encode volume name in UTF8
-    (sudo newfs_udf -b $BLOCK_SIZE -m blk -t ow -r 2.01 -v "$LABEL" --enc utf8 /dev/$DEVICE) || (echo "[-] Format failed!" >&2 && false)
+    (sudo newfs_udf -b $BLOCK_SIZE -m blk -t ow -r 2.01 -v "$LABEL" --enc utf8 /dev/$DEVICE) || (echo "[-] Format failed!" >&2; false)
 else
     echo "[-] Internal error 4" >&2
     exit 1
