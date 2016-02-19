@@ -174,6 +174,18 @@ function entire_disk_partition_entry {
 }
 
 
+# Prints message assuring user that $DEVICE has not been changed
+# Arguments:
+#   Device
+# Returns:
+#   None
+function exit_with_no_changes {
+    if [[ -n "$DEVICE" ]]; then
+        echo "[*] Exiting without changes to /dev/$DEVICE" >&2
+    fi
+}
+
+
 ###############################################################################
 # test dependencies
 ###############################################################################
@@ -342,6 +354,9 @@ LABEL=$2
 mount /dev/$DEVICE 2>/dev/null || true
 [[ -b /dev/$DEVICE ]] || (echo "[-] /dev/$DEVICE either doesn't exist or is not block special" >&2; false)
 
+# provide assuring exit message
+trap exit_with_no_changes EXIT
+
 
 ###############################################################################
 # print drive information
@@ -355,7 +370,7 @@ if [[ $TOOL_DRIVE_LISTING = $TOOL_BLOCKDEV ]]; then
 elif [[ $TOOL_DRIVE_LISTING = $TOOL_DISKUTIL ]]; then
     diskutil list $DEVICE
 else
-    echo "[-] Internal error 1.  Exiting without changes to /dev/$DEVICE." >&2
+    echo "[-] Internal error 1" >&2
     exit 1
 fi
 
@@ -370,7 +385,6 @@ if [[ -z $FORCE ]]; then
     read -p "Type 'yes' if this is what you intend:  " YES_CASE
     YES=$(echo $YES_CASE | tr '[:upper:]' '[:lower:]')
     if [[ $YES != "yes" ]]; then
-        echo "[-] Exiting without changes to /dev/$DEVICE." >&2
         exit 1
     fi
 fi
@@ -386,15 +400,15 @@ if [[ $TOOL_DRIVE_LISTING = $TOOL_BLOCKDEV ]]; then
 elif [[ -x $TOOL_DISKUTIL ]]; then
     TOTAL_SIZE=$(diskutil info $DEVICE | grep -i 'Total Size' | awk -F ':' '{print $2}' | egrep -oi '\([0-9]+ B' | sed 's/[^0-9]//g')
 else
-    echo "[-] Cannot detect total size.  Exiting without changes to /dev/$DEVICE." >&2
+    echo "[-] Cannot detect total size" >&2
     exit 1
 fi
 echo "[*] Using total size of $TOTAL_SIZE"
 
 # validate that $TOTAL_SIZE is numeric > 0
 echo "[+] Validating detected total size..."
-(echo "$TOTAL_SIZE" | egrep -q '^[0-9]+$') || (echo "[-] Could not detect valid total size.  Exiting without changes to /dev/$DEVICE." >&2; false)
-[[ $TOTAL_SIZE -gt 0 ]] || (echo "[-] Could not detect valid total size.  Exiting without changes to /dev/$DEVICE." >&2; false)
+(echo "$TOTAL_SIZE" | egrep -q '^[0-9]+$') || (echo "[-] Could not detect valid total size" >&2; false)
+[[ $TOTAL_SIZE -gt 0 ]] || (echo "[-] Could not detect valid total size" >&2; false)
 
 
 ###############################################################################
@@ -408,7 +422,7 @@ if [[ -z $ARG_BLOCK_SIZE ]]; then
     elif [[ -x $TOOL_DISKUTIL ]]; then
         BLOCK_SIZE=$(diskutil info $DEVICE | grep -i 'Device Block Size' | awk -F ':' '{print $2}' | awk '{print $1}')
     else
-        echo "[-] Cannot detect physical block size.  Exiting without changes to /dev/$DEVICE." >&2
+        echo "[-] Cannot detect physical block size" >&2
         exit 1
     fi
 else
@@ -419,8 +433,8 @@ echo "[*] Using block size of $BLOCK_SIZE"
 
 # validate that $BLOCK_SIZE is numeric > 0
 echo "[+] Validating detected block size..."
-(echo "$BLOCK_SIZE" | egrep -q '^[0-9]+$') || (echo "[-] Invalid block size.  Exiting without changes to /dev/$DEVICE." >&2; false)
-[[ $BLOCK_SIZE -gt 0 ]] || (echo "[-] Invalid block size.  Exiting without changes to /dev/$DEVICE." >&2; false)
+(echo "$BLOCK_SIZE" | egrep -q '^[0-9]+$') || (echo "[-] Invalid block size" >&2; false)
+[[ $BLOCK_SIZE -gt 0 ]] || (echo "[-] Invalid block size" >&2; false)
 
 
 ###############################################################################
@@ -443,6 +457,9 @@ fi
 ###############################################################################
 # optionally wipe drive
 ###############################################################################
+
+# this is where we start making changes to the drive
+trap - EXIT
 
 case $WIPE_METHOD in
     quick)
