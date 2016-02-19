@@ -524,7 +524,7 @@ esac
 
 # following call to blkid sometimes exits with failure, even though the drive is formatted properly.
 # `true` is so that a failure here doesn't cause entire script to exit prematurely
-SUMMARY=$(sudo blkid -c /dev/null /dev/$DEVICE 2>/dev/null) || true
+SUMMARY=$([[ -x $(which blkid) ]] && sudo blkid -c /dev/null /dev/$DEVICE 2>/dev/null) || true
 echo "[+] Successfully formatted $SUMMARY"
 
 # TODO find a way to auto-mount (`sudo mount -a` doesn't work).  in the meantime...
