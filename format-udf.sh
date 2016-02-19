@@ -97,6 +97,7 @@ Example:  $0 sdg "My External Drive"
 EOF
 }
 
+
 # Prints hex representation of CHS (cylinder-head-sector) to stdout
 # Arguments:
 #   Logical block address (LBA)
@@ -112,6 +113,7 @@ function lba_to_chs {
     printf "%02x%02x%02x" $H $((($C_HI<<6)|$S)) $C_LO
 }
 
+
 # Prints hex representation of value in host byte order
 # Arguments:
 #   32-bit integer
@@ -126,6 +128,7 @@ function ntohl {
         printf "%08x" $1 | tail -c 8 | sed -E 's/(..)/\1 /g' | awk '{print $4 $3 $2 $1}'
     fi
 }
+
 
 # Prints hex representation of entire-disk partition entry.  Reference:
 # https://en.wikipedia.org/wiki/Master_boot_record
