@@ -181,7 +181,7 @@ function entire_disk_partition_entry {
 #   None
 function exit_with_no_changes {
     if [[ -n "$DEVICE" ]]; then
-        echo "[*] Exiting without changes to /dev/$DEVICE" >&2
+        echo "[*] Exiting without changes to /dev/$DEVICE"
     fi
 }
 
