@@ -15,7 +15,7 @@ Bash script to format a block drive (hard drive or Flash drive) in UDF.  The out
 * Writes a fake MBR for added compatibility on Windows (optionally disabled)
 
 
-# OS Support
+# UDF OS Support
 Following tables detail operating system support for UDF.  Data was adapted from https://en.wikipedia.org/wiki/Universal_Disk_Format#Compatibility (as retrieved on 2015-Feb-20).
 
 ### Natively Supported
@@ -226,7 +226,7 @@ Flash       | 512        | OS X 10.11   | Success except label, see [#11](https:
 HDD (USB)   | 512        | Ubuntu 14.04 | Success            | Success
 HDD (USB)   | 512        | OS X 10.11   | Success except label, see [#11](https://github.com/JElchison/format-udf/issues/11)     | Success
 
-## For Best Results
+### For Best Results
 
 For maximal compatibility, use format-udf on an entire device in one of the following configurations:
 * Run format-udf on Linux
