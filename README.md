@@ -14,6 +14,8 @@ Bash script to format a block drive (hard drive or Flash drive) in UDF.  The out
 * Optionally wipes drive before formatting
 * Writes a fake MBR for added compatibility on Windows (optionally disabled)
 
+For the advanced user, this script is also capable of formatting a single existing partition, without modifying the partition table.  Beware that using this method will render the newly formatted UDF partition unusable on OS X.
+
 
 # OS Support
 Following tables detail operating system support for UDF.  Data was adapted from https://en.wikipedia.org/wiki/Universal_Disk_Format#Compatibility (as retrieved on 2015-Feb-20).
