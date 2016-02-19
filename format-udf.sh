@@ -372,10 +372,10 @@ else
 fi
 
 # validate parent device identifier (must be entire device)
-(echo "$PARENT_DEVICE" | egrep -q '^([hs]d[a-z]|disk[0-9]+)$') || (echo "[-] <device> is of invalid form (invalid parent device)" >&2 && false)
+(echo "$PARENT_DEVICE" | egrep -q '^([hs]d[a-z]|disk[0-9]+)$') || (echo "[-] <device> is of invalid form (invalid parent device)" >&2; false)
 
 # verify parent is a device, not just a file
-[[ -b /dev/$PARENT_DEVICE ]] || (echo "[-] /dev/$PARENT_DEVICE either doesn't exist or is not block special" >&2 && false)
+[[ -b /dev/$PARENT_DEVICE ]] || (echo "[-] /dev/$PARENT_DEVICE either doesn't exist or is not block special" >&2; false)
 
 # validate configuration
 if [[ "$PARENT_DEVICE" != "$DEVICE" ]] && [[ "$PARTITION_TYPE" != "none" ]]; then
