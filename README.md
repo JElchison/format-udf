@@ -215,6 +215,24 @@ write to block device: /dev/disk2  last written block address: 195371567
 Please disconnect/reconnect your drive now.
 ```
 
+# Expected Behavior
+
+As tested in the lab...
+
+Device Type | Block Size | Formatted on | Inserted on Ubuntu | Inserted on OS X
+------------|------------|--------------|--------------------|-----------------
+Flash       | 512        | Ubuntu 14.04 | Success            | Success
+Flash       | 512        | OS X 10.11   | Success except label, see [#11](https://github.com/JElchison/format-udf/issues/11)     | Success
+HDD (USB)   | 512        | Ubuntu 14.04 | Success            | Success
+HDD (USB)   | 512        | OS X 10.11   | Success except label, see [#11](https://github.com/JElchison/format-udf/issues/11)     | Success
+
+## For Best Results
+
+For maximal compatibility, use format-udf on an entire device in one of the following configurations:
+* Run format-udf on Linux
+* Run format-udf on OS X, but modify the drive label using Linux or Windows
+
+
 # A Fake Partition Table to Fake Out Windows
 
 As mentioned by Pieter [here](http://sipa.ulyssis.org/2010/02/filesystems-for-portable-disks/), Windows does not support hard disks without a partition table.  This is strange because Windows does not apply the same limitation to flash drives.
