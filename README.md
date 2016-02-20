@@ -17,7 +17,7 @@ Bash script to format a block device (hard drive or Flash drive) in UDF. The out
 For the advanced user, this script is also capable of formatting a single existing partition, without modifying the partition table.  Beware that using this method will render the newly formatted UDF partition unusable on OS X (but still usable on Linux and Windows).  Because of this limitation, the recommendation is to format the entire device.
 
 
-# OS Support
+# UDF OS Support
 Following tables detail operating system support for UDF.  Data was adapted from https://en.wikipedia.org/wiki/Universal_Disk_Format#Compatibility (as retrieved on 2015-Feb-20).
 
 ### Natively Supported
@@ -216,6 +216,24 @@ write to block device: /dev/disk2  last written block address: 195371567
 [+] Successfully formatted
 Please disconnect/reconnect your drive now.
 ```
+
+# Expected Behavior
+
+As tested in the lab...
+
+Device Type | Block Size | Formatted on | Inserted on Ubuntu | Inserted on OS X
+------------|------------|--------------|--------------------|-----------------
+Flash       | 512        | Ubuntu 14.04 | Success            | Success
+Flash       | 512        | OS X 10.11   | Success except label, see [#11](https://github.com/JElchison/format-udf/issues/11)     | Success
+HDD (USB)   | 512        | Ubuntu 14.04 | Success            | Success
+HDD (USB)   | 512        | OS X 10.11   | Success except label, see [#11](https://github.com/JElchison/format-udf/issues/11)     | Success
+
+### For Best Results
+
+For maximal compatibility, use format-udf on an entire device in one of the following configurations:
+* Run format-udf on Linux
+* Run format-udf on OS X, but modify the drive label using Linux or Windows
+
 
 # A Fake Partition Table to Fake Out Windows
 
