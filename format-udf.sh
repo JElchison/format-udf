@@ -2,7 +2,7 @@
 
 # format-udf.sh
 #
-# Bash script to format a block drive (hard drive or Flash drive) in UDF.  The output is a drive that can be used for reading/writing across multiple operating system families:  Windows, OS X, and Linux.  This script should be capable of running in OS X or in Linux.
+# Bash script to format a block device (hard drive or Flash drive) in UDF. The output is a drive that can be used for reading/writing across multiple operating system families: Windows, OS X, and Linux. This script should be capable of running in OS X or in Linux.
 #
 # Version 1.2.0
 #
@@ -50,7 +50,7 @@ OPTIND=1
 #   None
 print_usage() {
     cat <<EOF >&2
-Usage:  $0 [-b BLOCK_SIZE] [-f] [-p PARTITION_TYPE] [-w WIPE_METHOD] drive label
+Usage:  $0 [-b BLOCK_SIZE] [-f] [-p PARTITION_TYPE] [-w WIPE_METHOD] device label
 
     -b BLOCK_SIZE
         Block size to be used during format operation.
@@ -77,21 +77,21 @@ Usage:  $0 [-b BLOCK_SIZE] [-f] [-p PARTITION_TYPE] [-w WIPE_METHOD] drive label
         Wipe method to be used before format operation.
         Currently supported types include:  quick, zero, scrub
             quick - Quick method (default)
-            zero  - Write zeros to the entire drive
-            scrub - Iteratively writes patterns on drive
+            zero  - Write zeros to the entire device
+            scrub - Iteratively writes patterns on device
                     to make retrieving the data more difficult.
                     Requires 'scrub' to be executable and in the PATH.
                     See also http://linux.die.net/man/1/scrub
         If absent, defaults to 'quick'.
         Note:  'zero' and 'scrub' methods will take a long time.
 
-    drive
-        Drive to format.  Should be of the form:
+    device
+        Device to format.  Should be of the form:
           * sdx   (Linux, where 'x' is a letter) or
           * diskN (OS X,  where 'N' is a number)
 
     label
-        Label to apply to formatted drive.
+        Label to apply to formatted device.
 
 Example:  $0 sdg "My External Drive"
 EOF
@@ -346,8 +346,8 @@ fi
 DEVICE=$1
 LABEL=$2
 
-# verify that DEVICE doesn't have partition number on end, or that it's in OS X format
-(echo "$DEVICE" | egrep -q '^([hs]d[a-z]|disk[0-9]+)$') || (echo "[-] <device> is of invalid form" >&2; false)
+# validate device identifier (may be partition)
+(echo "$DEVICE" | egrep -q '^(([hs]d[a-z])([1-9][0-9]*)?|(disk[0-9]+)(s[1-9][0-9]*)?)$') || (echo "[-] <device> is of invalid form" >&2; false)
 
 # verify this is a device, not just a file
 # `true` is so that a failure here doesn't cause entire script to exit prematurely
@@ -359,13 +359,41 @@ trap exit_with_no_changes EXIT
 
 
 ###############################################################################
+# validate parent device
+###############################################################################
+
+# extract parent device identifier
+if sed --version &> /dev/null; then
+    # this box has GNU sed ('-r' for extended regex)
+    PARENT_DEVICE=$(echo "$DEVICE" | sed -r 's/^(([hs]d[a-z])([1-9][0-9]*)?|(disk[0-9]+)(s[1-9][0-9]*)?)$/\2\4/')
+else
+    # this machine must have BSD sed ('-E' for extended regex)
+    PARENT_DEVICE=$(echo "$DEVICE" | sed -E 's/^(([hs]d[a-z])([1-9][0-9]*)?|(disk[0-9]+)(s[1-9][0-9]*)?)$/\2\4/')
+fi
+
+# validate parent device identifier (must be entire device)
+(echo "$PARENT_DEVICE" | egrep -q '^([hs]d[a-z]|disk[0-9]+)$') || (echo "[-] <device> is of invalid form (invalid parent device)" >&2; false)
+
+# verify parent is a device, not just a file
+[[ -b /dev/$PARENT_DEVICE ]] || (echo "[-] /dev/$PARENT_DEVICE either doesn't exist or is not block special" >&2; false)
+
+# validate configuration
+if [[ "$PARENT_DEVICE" != "$DEVICE" ]] && [[ "$PARTITION_TYPE" != "none" ]]; then
+    echo "[-] You are attempting to format a single partition (as opposed to entire device)." >&2
+    echo "[-] Partition type '$PARTITION_TYPE' incompatible with single partition formatting." >&2
+    echo "[-] Please specify an entire device or partition type of 'none'." >&2
+    exit 1
+fi
+
+
+###############################################################################
 # print drive information
 ###############################################################################
 
 echo "[+] Gathering drive information..."
 if [[ $TOOL_DRIVE_LISTING = $TOOL_BLOCKDEV ]]; then
     sudo blkid -c /dev/null /dev/$DEVICE || true
-    cat /sys/block/$DEVICE/device/model
+    cat /sys/block/$PARENT_DEVICE/device/model
     sudo blockdev --report | egrep "(Device|$DEVICE)"
 elif [[ $TOOL_DRIVE_LISTING = $TOOL_DISKUTIL ]]; then
     diskutil list $DEVICE
@@ -380,8 +408,19 @@ fi
 ###############################################################################
 
 if [[ -z $FORCE ]]; then
+    if [[ "$PARENT_DEVICE" != "$DEVICE" ]]; then
+        echo "You are attempting to format a single partition (as opposed to entire device)."
+        echo "For maximal compatibility, the recommendation is to format the entire device."
+        echo "If you continue, the resultant UDF partition will not be recognized on OS X."
+        read -p "Type 'yes' if this is what you intend:  " YES_CASE
+        YES=$(echo $YES_CASE | tr '[:upper:]' '[:lower:]')
+        if [[ $YES != "yes" ]]; then
+            exit 1
+        fi
+    fi
+
     # give the user a chance to realize his/her mistake
-    echo "The above-listed drive (and partitions, if any) will be completely erased."
+    echo "The above-listed device (and partitions, if any) will be completely erased."
     read -p "Type 'yes' if this is what you intend:  " YES_CASE
     YES=$(echo $YES_CASE | tr '[:upper:]' '[:lower:]')
     if [[ $YES != "yes" ]]; then
@@ -438,10 +477,10 @@ echo "[+] Validating detected block size..."
 
 
 ###############################################################################
-# unmount drive (if mounted)
+# unmount device (if mounted)
 ###############################################################################
 
-echo "[+] Unmounting drive..."
+echo "[+] Unmounting device..."
 if [[ $TOOL_UNMOUNT = $TOOL_UMOUNT ]]; then
     # `true` is so that a failure here doesn't cause entire script to exit prematurely
     sudo umount /dev/$DEVICE || true
@@ -455,10 +494,10 @@ fi
 
 
 ###############################################################################
-# optionally wipe drive
+# optionally wipe device
 ###############################################################################
 
-# this is where we start making changes to the drive
+# this is where we start making changes to the device
 trap - EXIT
 
 case $WIPE_METHOD in
@@ -466,11 +505,11 @@ case $WIPE_METHOD in
         # nothing to do
         ;;
     zero)
-        echo "[+] Overwriting drive with zeros.  This will likely take a LONG time..."
+        echo "[+] Overwriting device with zeros.  This will likely take a LONG time..."
         sudo dd if=/dev/zero of=/dev/$DEVICE bs=$BLOCK_SIZE || true
         ;;
     scrub)
-        echo "[+] Scrubbing drive with random patterns.  This will likely take a LONG time..."
+        echo "[+] Scrubbing device with random patterns.  This will likely take a LONG time..."
         sudo scrub -f /dev/$DEVICE
         ;;
     *)
@@ -484,13 +523,13 @@ esac
 # zero out partition table (required even without fake partition table)
 ###############################################################################
 
-echo "[+] Zeroing out any existing partition table on drive..."
-# 4096 was arbitrarily chosen to be "big enough" to delete first chunk of disk
+echo "[+] Zeroing out first chunk of device..."
+# 4096 was arbitrarily chosen to be "big enough" to delete first chunk of device
 sudo dd if=/dev/zero of=/dev/$DEVICE bs=$BLOCK_SIZE count=4096
 
 
 ###############################################################################
-# format drive
+# format device
 ###############################################################################
 
 echo "[+] Formatting /dev/$DEVICE ..."
@@ -542,7 +581,7 @@ esac
 # report status
 ###############################################################################
 
-# following call to blkid sometimes exits with failure, even though the drive is formatted properly.
+# following call to blkid sometimes exits with failure, even though the device is formatted properly.
 # `true` is so that a failure here doesn't cause entire script to exit prematurely
 SUMMARY=$([[ -x $(which blkid) ]] && sudo blkid -c /dev/null /dev/$DEVICE 2>/dev/null) || true
 echo "[+] Successfully formatted $SUMMARY"

@@ -1,18 +1,20 @@
 format-udf
 ==========
 
-Bash script to format a block drive (hard drive or Flash drive) in UDF.  The output is a drive that can be used for reading/writing across multiple operating system families:  Windows, OS X, and Linux.  This script should be capable of running in OS X or in Linux.
+Bash script to format a block device (hard drive or Flash drive) in UDF. The output is a drive that can be used for reading/writing across multiple operating system families: Windows, OS X, and Linux. This script should be capable of running in OS X or in Linux.
 
 
 # Features
-* Formats a block drive (hard drive or Flash drive) in <a href="https://en.wikipedia.org/wiki/Universal_Disk_Format">Universal Disk Format (UDF)</a>
+* Formats a block device (hard drive or Flash drive) in <a href="https://en.wikipedia.org/wiki/Universal_Disk_Format">Universal Disk Format (UDF)</a>
     * UDF revision 2.01 used for maximal compatibility (see note on Linux support below)
 * Resulting file system can be read/written across multiple operating system families (Windows, OS X, and Linux)
 * Runs on any OS having a Bash environment
 * Ability to override detected device block size
 * Option to force non-interactive mode (useful for scripting)
-* Optionally wipes drive before formatting
+* Optionally wipes device before formatting
 * Writes a fake MBR for added compatibility on Windows (optionally disabled)
+
+For the advanced user, this script is also capable of formatting a single existing partition, without modifying the partition table.  Beware that using this method will render the newly formatted UDF partition unusable on OS X (but still usable on Linux and Windows).  Because of this limitation, the recommendation is to format the entire device.
 
 
 # OS Support
@@ -74,7 +76,7 @@ Simply copy format-udf.sh to a directory of your choosing.  Don't forget to make
 
 # Usage
 ```
-Usage:  ./format-udf.sh [-b BLOCK_SIZE] [-f] [-p PARTITION_TYPE] [-w WIPE_METHOD] drive label
+Usage:  ./format-udf.sh [-b BLOCK_SIZE] [-f] [-p PARTITION_TYPE] [-w WIPE_METHOD] device label
 
     -b BLOCK_SIZE
         Block size to be used during format operation.
@@ -101,21 +103,21 @@ Usage:  ./format-udf.sh [-b BLOCK_SIZE] [-f] [-p PARTITION_TYPE] [-w WIPE_METHOD
         Wipe method to be used before format operation.
         Currently supported types include:  quick, zero, scrub
             quick - Quick method (default)
-            zero  - Write zeros to the entire drive
-            scrub - Iteratively writes patterns on drive
+            zero  - Write zeros to the entire device
+            scrub - Iteratively writes patterns on device
                     to make retrieving the data more difficult.
                     Requires 'scrub' to be executable and in the PATH.
                     See also http://linux.die.net/man/1/scrub
         If absent, defaults to 'quick'.
         Note:  'zero' and 'scrub' methods will take a long time.
 
-    drive
-        Drive to format.  Should be of the form:
+    device
+        Device to format.  Should be of the form:
           * sdx   (Linux, where 'x' is a letter) or
           * diskN (OS X,  where 'N' is a number)
 
     label
-        Label to apply to formatted drive.
+        Label to apply to formatted device.
 
 Example:  ./format-udf.sh sdg "My External Drive"
 ```
@@ -137,7 +139,7 @@ user@computer:~$ ./format-udf.sh sdg "My UDF External Drive"
 HTS721010G9SA00 
 RO    RA   SSZ   BSZ   StartSec            Size   Device
 rw   256   512  4096          0    100030242816   /dev/sdg
-The above-listed drive (and partitions, if any) will be completely erased.
+The above-listed device (and partitions, if any) will be completely erased.
 Type 'yes' if this is what you intend:  yes
 [+] Detecting total size...
 [*] Using total size of 100030242816
@@ -145,9 +147,9 @@ Type 'yes' if this is what you intend:  yes
 [+] Detecting physical block size...
 [*] Using block size of 512
 [+] Validating detected block size...
-[+] Unmounting drive...
+[+] Unmounting device...
 umount: /dev/sdg: not mounted
-[+] Zeroing out any existing partition table on drive...
+[+] Zeroing out first chunk of device...
 4096+0 records in
 4096+0 records out
 2097152 bytes (2.1 MB) copied, 0.531167 s, 3.9 MB/s
@@ -187,7 +189,7 @@ computer:~ user$ ./format-udf.sh disk2 "My UDF External Drive"
 /dev/disk2
    #:                       TYPE NAME                    SIZE       IDENTIFIER
    0:                            Old Drive              *100.0 GB   disk2
-The above-listed drive (and partitions, if any) will be completely erased.
+The above-listed device (and partitions, if any) will be completely erased.
 Type 'yes' if this is what you intend:  yes
 [+] Detecting total size...
 [*] Using total size of 100030242816
@@ -195,10 +197,10 @@ Type 'yes' if this is what you intend:  yes
 [+] Detecting physical block size...
 [*] Using block size of 512
 [+] Validating detected block size...
-[+] Unmounting drive...
+[+] Unmounting device...
 Password:
 Unmount of all volumes on disk2 was successful
-[+] Zeroing out any existing partition table on drive...
+[+] Zeroing out first chunk of device...
 4096+0 records in
 4096+0 records out
 2097152 bytes transferred in 0.592766 secs (3537908 bytes/sec)
