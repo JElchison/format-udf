@@ -279,7 +279,7 @@ WIPE_METHOD=quick
 
 echo "[+] Parsing options..."
 
-while getopts ":b:fp:w:" opt; do
+while getopts ":b:fp:w:h" opt; do
     case $opt in
         b)
             ARG_BLOCK_SIZE="$OPTARG"
@@ -312,6 +312,10 @@ while getopts ":b:fp:w:" opt; do
                     exit 1
                 fi
             fi
+            ;;
+        h)
+            print_usage
+            exit 0
             ;;
         \?)
             echo "[-] Invalid option '-$OPTARG'" >&2
