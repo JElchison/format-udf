@@ -544,7 +544,7 @@ if [[ $TOOL_UDF = $TOOL_MKUDFFS ]]; then
     # --vid        - volume identifier
     # --media-type - "hd" type covers both hard drives and USB drives
     # --utf8       - encode file names in UTF8
-    (sudo mkudffs --blocksize=$BLOCK_SIZE --udfrev=0x0201 --lvid="$LABEL" --vid="$LABEL" --media-type=hd --utf8 /dev/$DEVICE) || (echo "[-] Format failed!" >&2; false)
+    (sudo mkudffs --utf8 --blocksize=$BLOCK_SIZE --udfrev=0x0201 --lvid="$LABEL" --vid="$LABEL" --media-type=hd /dev/$DEVICE) || (echo "[-] Format failed!" >&2; false)
 elif [[ $TOOL_UDF = $TOOL_NEWFS_UDF ]]; then
     # -b    - the size of blocks in bytes. should be the same as the drive's physical block size.
     # -m    - "blk" type covers both hard drives and USB drives
