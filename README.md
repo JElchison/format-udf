@@ -247,6 +247,7 @@ format-udf writes such a fake MBR for added compatibility on Windows.
 
 If this is not what you desire, you can disable the MBR with `-p none`.
 
+After installing GRUB2 on partitionless drive at fdisk can be seen partition and set active if your BIOS can't boot from partitionless drives.
 
 # See Also
 
