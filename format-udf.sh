@@ -441,7 +441,7 @@ echo "[+] Detecting total size..."
 if [[ $TOOL_DRIVE_LISTING = $TOOL_BLOCKDEV ]]; then
     TOTAL_SIZE=$(sudo blockdev --getsize64 /dev/$DEVICE)
 elif [[ -x $TOOL_DISKUTIL ]]; then
-    TOTAL_SIZE=$(diskutil info $DEVICE | grep -i 'Total Size' | awk -F ':' '{print $2}' | egrep -oi '\([0-9]+ B' | sed 's/[^0-9]//g')
+    TOTAL_SIZE=$(diskutil info $DEVICE | egrep -i '(Total|Disk) Size' | awk -F ':' '{print $2}' | egrep -oi '\([0-9]+ B' | sed 's/[^0-9]//g')
 else
     echo "[-] Cannot detect total size" >&2
     exit 1
