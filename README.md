@@ -234,7 +234,21 @@ If's extremely important that format-udf.sh use the correct block size when form
 
 If the wrong block size is used (i.e. one that doesn't match the geometry of your drive), the resultant drive will likely have non-optimal performance issues, and may not use the drive's entire storage capacity.
 
-In the same way, it's just as important that the resultant drive be mounted using the correct block size.  Many operating systems will only attempt one block size (usually whatever the mount utility defaults to).  If your block size isn't the OS's default, then auto-mounting likely will not work on your OS.  While a small nuisance, manual mounting attempts should still succeed for nonstandard block sizes.  See [#16](https://github.com/JElchison/format-udf/issues/16) and [#31](https://github.com/JElchison/format-udf/issues/31) for more info.
+In the same way, it's just as important that the resultant drive be mounted using the correct block size.  Many operating systems will only attempt one block size (usually whatever the mount utility defaults to).  If your block size isn't the OS's default, then auto-mounting likely will not work on your OS.  While a small nuisance, manual mounting attempts should still succeed for nonstandard block sizes.
+
+Example of how to manually mount on Linux:
+```
+$ mount -t udf -o bs=4096 /dev/sdX /mnt/mount-point
+```
+
+Example of how to manually mount on OS X:
+```
+$ sudo mount_udf -b 4096 /dev/diskN /Volumes/MountPoint
+```
+
+Sadly, anything with block size different than 512 doesn't seem to mount on Windows.
+
+For more info, see [#12](https://github.com/JElchison/format-udf/issues/12), [#16](https://github.com/JElchison/format-udf/issues/16), and [#31](https://github.com/JElchison/format-udf/issues/31).
 
 ### For Best Results
 
