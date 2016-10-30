@@ -4,7 +4,7 @@
 #
 # Bash script to format a block device (hard drive or Flash drive) in UDF. The output is a drive that can be used for reading/writing across multiple operating system families: Windows, OS X, and Linux. This script should be capable of running in OS X or in Linux.
 #
-# Version 1.4.2
+# Version 1.4.3
 #
 # Copyright (C) 2016 Jonathan Elchison <JElchison@gmail.com>
 #
