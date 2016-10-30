@@ -105,12 +105,12 @@ EOF
 #   None
 function lba_to_chs {
     LBA=$1
-    C=$((($LBA/($HPC*$SPT)) % (2**10)))
-    C_HI=$((($C>>8) % (2**2)))
-    C_LO=$(($C % (2**8)))
-    H=$(((($LBA/$SPT) % $HPC) % (2**8)))
-    S=$(((($LBA % $SPT) + 1) % (2**6)))
-    printf "%02x%02x%02x" $H $((($C_HI<<6)|$S)) $C_LO
+    C=$(((LBA/(HPC*SPT)) % (2**10)))
+    C_HI=$(((C>>8) % (2**2)))
+    C_LO=$((C % (2**8)))
+    H=$((((LBA/SPT) % HPC) % (2**8)))
+    S=$((((LBA % SPT) + 1) % (2**6)))
+    printf "%02x%02x%02x" $H $(((C_HI<<6)|S)) $C_LO
 }
 
 
@@ -122,10 +122,10 @@ function lba_to_chs {
 function ntohl {
     if sed --version &> /dev/null; then
         # this box has GNU sed ('-r' for extended regex)
-        printf "%08x" $1 | tail -c 8 | sed -r 's/(..)/\1 /g' | awk '{print $4 $3 $2 $1}'
+        printf "%08x" "$1" | tail -c 8 | sed -r 's/(..)/\1 /g' | awk '{print $4 $3 $2 $1}'
     else
         # this machine must have BSD sed ('-E' for extended regex)
-        printf "%08x" $1 | tail -c 8 | sed -E 's/(..)/\1 /g' | awk '{print $4 $3 $2 $1}'
+        printf "%08x" "$1" | tail -c 8 | sed -E 's/(..)/\1 /g' | awk '{print $4 $3 $2 $1}'
     fi
 }
 
@@ -141,7 +141,7 @@ function ntohl {
 function entire_disk_partition_entry {
     TOTAL_SIZE=$1
     BLOCK_SIZE=$2
-    MAX_LBA=$(($TOTAL_SIZE/$BLOCK_SIZE))
+    MAX_LBA=$((TOTAL_SIZE/BLOCK_SIZE))
 
     # status / physical drive (bit 7 set: active / bootable, old MBRs only accept 80h), 00h: inactive, 01h–7Fh: invalid)
     echo -n "00"
@@ -150,13 +150,13 @@ function entire_disk_partition_entry {
     # Partition type = FAT32 with CHS addressing
     echo -n "0b"
     # CHS address of last absolute sector in partition. The format is described by 3 bytes.
-    if [[ $MAX_LBA -ge $((1024*$HPC*$SPT-1)) ]]; then
+    if [[ $MAX_LBA -ge $((1024*HPC*SPT-1)) ]]; then
         # From https://en.wikipedia.org/wiki/Master_boot_record#Partition_table_entries
         # When a CHS address is too large to fit into these fields, the tuple (1023, 254, 63) is typically used today
         echo -n "feffff"
     else
         # '-1' yields last usable sector
-        lba_to_chs $(($MAX_LBA-1))
+        lba_to_chs $((MAX_LBA-1))
     fi
 
     # LBA of first absolute sector in the partition.
@@ -355,8 +355,8 @@ LABEL=$2
 
 # verify this is a device, not just a file
 # `true` is so that a failure here doesn't cause entire script to exit prematurely
-mount /dev/$DEVICE 2>/dev/null || true
-[[ -b /dev/$DEVICE ]] || (echo "[-] /dev/$DEVICE either doesn't exist or is not block special" >&2; false)
+mount "/dev/$DEVICE" 2>/dev/null || true
+[[ -b "/dev/$DEVICE" ]] || (echo "[-] /dev/$DEVICE either doesn't exist or is not block special" >&2; false)
 
 # provide assuring exit message
 trap exit_with_no_changes EXIT
@@ -395,12 +395,12 @@ fi
 ###############################################################################
 
 echo "[+] Gathering drive information..."
-if [[ $TOOL_DRIVE_LISTING = $TOOL_BLOCKDEV ]]; then
-    sudo blkid -c /dev/null /dev/$DEVICE || true
-    cat /sys/block/$PARENT_DEVICE/device/model
+if [[ $TOOL_DRIVE_LISTING = "$TOOL_BLOCKDEV" ]]; then
+    sudo blkid -c /dev/null "/dev/$DEVICE" || true
+    cat "/sys/block/$PARENT_DEVICE/device/model"
     sudo blockdev --report | egrep "(Device|$DEVICE)"
-elif [[ $TOOL_DRIVE_LISTING = $TOOL_DISKUTIL ]]; then
-    diskutil list $DEVICE
+elif [[ $TOOL_DRIVE_LISTING = "$TOOL_DISKUTIL" ]]; then
+    diskutil list "$DEVICE"
 else
     echo "[-] Internal error 1" >&2
     exit 1
@@ -417,7 +417,7 @@ if [[ -z $FORCE ]]; then
         echo "For maximal compatibility, the recommendation is to format the entire device."
         echo "If you continue, the resultant UDF partition will not be recognized on OS X."
         read -p "Type 'yes' if this is what you intend:  " YES_CASE
-        YES=$(echo $YES_CASE | tr '[:upper:]' '[:lower:]')
+        YES=$(echo "$YES_CASE" | tr '[:upper:]' '[:lower:]')
         if [[ $YES != "yes" ]]; then
             exit 1
         fi
@@ -426,7 +426,7 @@ if [[ -z $FORCE ]]; then
     # give the user a chance to realize his/her mistake
     echo "The above-listed device (and partitions, if any) will be completely erased."
     read -p "Type 'yes' if this is what you intend:  " YES_CASE
-    YES=$(echo $YES_CASE | tr '[:upper:]' '[:lower:]')
+    YES=$(echo "$YES_CASE" | tr '[:upper:]' '[:lower:]')
     if [[ $YES != "yes" ]]; then
         exit 1
     fi
@@ -438,10 +438,10 @@ fi
 ###############################################################################
 
 echo "[+] Detecting total size..."
-if [[ $TOOL_DRIVE_LISTING = $TOOL_BLOCKDEV ]]; then
-    TOTAL_SIZE=$(sudo blockdev --getsize64 /dev/$DEVICE)
+if [[ $TOOL_DRIVE_LISTING = "$TOOL_BLOCKDEV" ]]; then
+    TOTAL_SIZE=$(sudo blockdev --getsize64 "/dev/$DEVICE")
 elif [[ -x $TOOL_DISKUTIL ]]; then
-    TOTAL_SIZE=$(diskutil info $DEVICE | egrep -i '(Total|Disk) Size' | awk -F ':' '{print $2}' | egrep -oi '\([0-9]+ B' | sed 's/[^0-9]//g')
+    TOTAL_SIZE=$(diskutil info "$DEVICE" | egrep -i '(Total|Disk) Size' | awk -F ':' '{print $2}' | egrep -oi '\([0-9]+ B' | sed 's/[^0-9]//g')
 else
     echo "[-] Cannot detect total size" >&2
     exit 1
@@ -460,10 +460,10 @@ echo "[+] Validating detected total size..."
 
 if [[ -z $ARG_BLOCK_SIZE ]]; then
     echo "[+] Detecting physical block size..."
-    if [[ $TOOL_DRIVE_LISTING = $TOOL_BLOCKDEV ]]; then
-        BLOCK_SIZE=$(sudo blockdev --getpbsz /dev/$DEVICE)
+    if [[ $TOOL_DRIVE_LISTING = "$TOOL_BLOCKDEV" ]]; then
+        BLOCK_SIZE=$(sudo blockdev --getpbsz "/dev/$DEVICE")
     elif [[ -x $TOOL_DISKUTIL ]]; then
-        BLOCK_SIZE=$(diskutil info $DEVICE | grep -i 'Device Block Size' | awk -F ':' '{print $2}' | awk '{print $1}')
+        BLOCK_SIZE=$(diskutil info "$DEVICE" | grep -i 'Device Block Size' | awk -F ':' '{print $2}' | awk '{print $1}')
     else
         echo "[-] Cannot detect physical block size" >&2
         exit 1
@@ -485,12 +485,12 @@ echo "[+] Validating detected block size..."
 ###############################################################################
 
 echo "[+] Unmounting device..."
-if [[ $TOOL_UNMOUNT = $TOOL_UMOUNT ]]; then
+if [[ $TOOL_UNMOUNT = "$TOOL_UMOUNT" ]]; then
     # `true` is so that a failure here doesn't cause entire script to exit prematurely
-    sudo umount /dev/$DEVICE || true
-elif [[ $TOOL_UNMOUNT = $TOOL_DISKUTIL ]]; then
+    sudo umount "/dev/$DEVICE" || true
+elif [[ $TOOL_UNMOUNT = "$TOOL_DISKUTIL" ]]; then
     # `true` is so that a failure here doesn't cause entire script to exit prematurely
-    sudo diskutil unmountDisk /dev/$DEVICE || true
+    sudo diskutil unmountDisk "/dev/$DEVICE" || true
 else
     echo "[-] Internal error 2" >&2
     exit 1
@@ -510,11 +510,11 @@ case $WIPE_METHOD in
         ;;
     zero)
         echo "[+] Overwriting device with zeros.  This will likely take a LONG time..."
-        sudo dd if=/dev/zero of=/dev/$DEVICE bs=$BLOCK_SIZE || true
+        sudo dd if=/dev/zero of="/dev/$DEVICE" bs="$BLOCK_SIZE" || true
         ;;
     scrub)
         echo "[+] Scrubbing device with random patterns.  This will likely take a LONG time..."
-        sudo scrub -f /dev/$DEVICE
+        sudo scrub -f "/dev/$DEVICE"
         ;;
     *)
         echo "[-] Internal error 3" >&2
@@ -529,7 +529,7 @@ esac
 
 echo "[+] Zeroing out first chunk of device..."
 # 4096 was arbitrarily chosen to be "big enough" to delete first chunk of device
-sudo dd if=/dev/zero of=/dev/$DEVICE bs=$BLOCK_SIZE count=4096
+sudo dd if=/dev/zero of="/dev/$DEVICE" bs="$BLOCK_SIZE" count=4096
 
 
 ###############################################################################
@@ -537,22 +537,22 @@ sudo dd if=/dev/zero of=/dev/$DEVICE bs=$BLOCK_SIZE count=4096
 ###############################################################################
 
 echo "[+] Formatting /dev/$DEVICE ..."
-if [[ $TOOL_UDF = $TOOL_MKUDFFS ]]; then
+if [[ $TOOL_UDF = "$TOOL_MKUDFFS" ]]; then
     # --utf8       - encode file names in UTF8 (since pali/udftools@52afdce, this must be specified as the first argument)
     # --blocksize  - the size of blocks in bytes. should be the same as the drive's physical block size.
     # --udfrev     - the udf revision to use.  2.01 is the latest revision available that supports writing in Linux.
     # --lvid       - logical volume identifier
     # --vid        - volume identifier
     # --media-type - "hd" type covers both hard drives and USB drives
-    (sudo mkudffs --utf8 --blocksize=$BLOCK_SIZE --udfrev=0x0201 --lvid="$LABEL" --vid="$LABEL" --media-type=hd /dev/$DEVICE) || (echo "[-] Format failed!" >&2; false)
-elif [[ $TOOL_UDF = $TOOL_NEWFS_UDF ]]; then
+    (sudo mkudffs --utf8 --blocksize="$BLOCK_SIZE" --udfrev=0x0201 --lvid="$LABEL" --vid="$LABEL" --media-type=hd "/dev/$DEVICE") || (echo "[-] Format failed!" >&2; false)
+elif [[ $TOOL_UDF = "$TOOL_NEWFS_UDF" ]]; then
     # -b    - the size of blocks in bytes. should be the same as the drive's physical block size.
     # -m    - "blk" type covers both hard drives and USB drives
     # -t    - "overwrite" access type
     # -r    - the udf revision to use.  2.01 is the latest revision available that supports writing in Linux.
     # -v    - volume identifier
     # --enc - encode volume name in UTF8
-    (sudo newfs_udf -b $BLOCK_SIZE -m blk -t ow -r 2.01 -v "$LABEL" --enc utf8 /dev/$DEVICE) || (echo "[-] Format failed!" >&2; false)
+    (sudo newfs_udf -b "$BLOCK_SIZE" -m blk -t ow -r 2.01 -v "$LABEL" --enc utf8 "/dev/$DEVICE") || (echo "[-] Format failed!" >&2; false)
 else
     echo "[-] Internal error 4" >&2
     exit 1
@@ -570,9 +570,9 @@ case $PARTITION_TYPE in
     mbr)
         echo "[+] Writing fake MBR..."
         # first block has already been zero'd.  start by writing the (only) partition entry at its correct offset.
-        entire_disk_partition_entry $TOTAL_SIZE $BLOCK_SIZE | xxd -r -p | sudo dd of=/dev/$DEVICE bs=1 seek=446 count=16
+        entire_disk_partition_entry "$TOTAL_SIZE" "$BLOCK_SIZE" | xxd -r -p | sudo dd of="/dev/$DEVICE" bs=1 seek=446 count=16
         # Boot signature at the end of the block
-        echo -n 55aa | xxd -r -p | sudo dd of=/dev/$DEVICE bs=1 seek=510 count=2
+        echo -n 55aa | xxd -r -p | sudo dd of="/dev/$DEVICE" bs=1 seek=510 count=2
         ;;
     *)
         echo "[-] Internal error 5" >&2
@@ -587,7 +587,7 @@ esac
 
 # following call to blkid sometimes exits with failure, even though the device is formatted properly.
 # `true` is so that a failure here doesn't cause entire script to exit prematurely
-SUMMARY=$([[ -x $(which blkid) ]] && sudo blkid -c /dev/null /dev/$DEVICE 2>/dev/null) || true
+SUMMARY=$([[ -x $(which blkid) ]] && sudo blkid -c /dev/null "/dev/$DEVICE" 2>/dev/null) || true
 echo "[+] Successfully formatted $SUMMARY"
 
 # TODO find a way to auto-mount (`sudo mount -a` doesn't work).  in the meantime...
