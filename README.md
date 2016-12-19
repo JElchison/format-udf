@@ -228,6 +228,28 @@ Flash       | 512        | OS X 10.11   | Success except label, see [#11](https:
 HDD (USB)   | 512        | Ubuntu 14.04 | Success            | Success
 HDD (USB)   | 512        | OS X 10.11   | Success except label, see [#11](https://github.com/JElchison/format-udf/issues/11)     | Success
 
+### Block Size
+
+If's extremely important that format-udf.sh use the correct block size when formatting your drive.  The script will attempt to detect and use the correct block size.  However, in rare cases (such as [#13](https://github.com/JElchison/format-udf/issues/13)), Linux can [lie](https://bugzilla.kernel.org/show_bug.cgi?id=102271) about the block size.  OS X is known to report the incorrect block size in certain scenarios as well.  In these cases, the format-udf `-b BLOCK_SIZE` option can be used to explicitly set it.
+
+If the wrong block size is used (i.e. one that doesn't match the geometry of your drive), the resultant drive will likely have non-optimal performance issues, and may not use the drive's entire storage capacity.
+
+In the same way, it's just as important that the resultant drive be mounted using the correct block size.  Many operating systems will only attempt one block size (usually whatever the mount utility defaults to).  If your block size isn't the OS's default, then auto-mounting likely will not work on your OS.  While a small nuisance, manual mounting attempts should still succeed for nonstandard block sizes.
+
+Example of how to manually mount on Linux:
+```
+$ mount -t udf -o bs=4096 /dev/sdX /mnt/mount-point
+```
+
+Example of how to manually mount on OS X:
+```
+$ sudo mount_udf -b 4096 /dev/diskN /Volumes/MountPoint
+```
+
+Sadly, anything with block size different than 512 doesn't seem to mount on Windows.
+
+For more info, see [#12](https://github.com/JElchison/format-udf/issues/12), [#16](https://github.com/JElchison/format-udf/issues/16), and [#31](https://github.com/JElchison/format-udf/issues/31).
+
 ### For Best Results
 
 For maximal compatibility, use format-udf on an entire device in one of the following configurations:
