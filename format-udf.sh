@@ -230,6 +230,7 @@ echo " using $TOOL_DRIVE_LISTING"
 echo -n "[+] Looking for unmount tool..."
 # `true` is so that a failure here doesn't cause entire script to exit prematurely
 TOOL_UMOUNT=$(which umount 2>/dev/null) || true
+# NOTE: 'TOOL_DISKUTIL' has already been set above.  no need to set it again here.
 # prefer 'diskutil' if available, as it's required on OS X (even if 'umount' is present)
 if [[ -x "$TOOL_DISKUTIL" ]]; then
     TOOL_UNMOUNT=$TOOL_DISKUTIL
