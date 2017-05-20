@@ -259,7 +259,7 @@ For maximal compatibility, use format-udf on an entire device in one of the foll
 
 # A Fake Partition Table to Fake Out Windows
 
-As mentioned by Pieter [here](http://sipa.ulyssis.org/2010/02/filesystems-for-portable-disks/), Windows does not support hard disks without a partition table.  This is strange because Windows does not apply the same limitation to flash drives.
+As mentioned by Pieter [here](https://web.archive.org/web/20151103171649/http://sipa.ulyssis.org/2010/02/filesystems-for-portable-disks/), Windows does not support hard disks without a partition table.  This is strange because Windows does not apply the same limitation to flash drives.
 
 To make matters worse, OS X only uses UDF disks that utilize the full disk (not just a partition).
 
