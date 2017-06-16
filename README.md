@@ -55,16 +55,6 @@ Operating System                    |Note
 DOS, FreeDOS, Windows 3.11 or older |Filesystems that have an ISO9660 backward compatibility structure can be read
 
 
-# Environment
-* Any OS having a Bash environment
-* The following tools must be installed, executable, and in the PATH:
-    * printf
-    * xxd
-    * *One* of the following:  blockdev, diskutil
-    * *One* of the following:  umount, diskutil
-    * *One* of the following:  mkudffs, newfs_udf
-
-
 # 4K Drive Support
 Not all operating systems support 4K drives.  If you operating system supports UDF, but not your 4K drive, you still may encounter issues using this script.
 
@@ -82,6 +72,16 @@ Windows 7, Server 2008 R2                       |Supported; likely works but unt
 Windows 8, Server 2012                          |Supported; likely works but untested |Supported; likely works but untested                                             |Supported; likely works but untested
 Windows 8.1, Server 2012 R2                     |Supported; likely works but untested |Unsupported                                                                      |Unsupported
 Windows 10, Server 2016                         |Supported; likely works but untested |Unsupported                                                                      |Supported; likely works but untested
+
+
+# Environment
+* Any OS having a Bash environment
+* The following tools must be installed, executable, and in the PATH:
+    * printf
+    * xxd
+    * *One* of the following:  blockdev, diskutil
+    * *One* of the following:  umount, diskutil
+    * *One* of the following:  mkudffs, newfs_udf
 
 
 # Prerequisites
