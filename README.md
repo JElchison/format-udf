@@ -272,7 +272,11 @@ For more info, see [#12](https://github.com/JElchison/format-udf/issues/12), [#1
 
 ### For Best Results
 
-For maximal compatibility, use format-udf on an entire device in one of the following configurations:
+For maximal OS compatibility, use format-udf on a device having a logical block size of 512 bytes.  This will limit your total capacity to 2 TiB, but the resultant device should work on the most operating systems.
+
+For maximal resultant UDF file system capacity, use use format-udf on a device having a logical block size of 4096 bytes.  This will increase your total capacity (from 2 TiB) to 16 TiB, but will limit the number/types of operating systems that will be able to mount/read/write the resultant device.  See compatibility tables above for more detail.
+
+For a human-readable device label, use format-udf in one of the following configurations:
 * Run format-udf on Linux
 * Run format-udf on macOS, but modify the drive label using Linux or Windows
 
