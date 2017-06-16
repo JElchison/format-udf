@@ -24,20 +24,20 @@ Not all operating systems support UDF.  The following tables detail operating sy
 
 Both read/write are supported unless otherwise listed below.
 
-Operating System                              |Read-only                                                                           |Note
-----------------------------------------------|------------------------------------------------------------------------------------|----------------------------------------
-Windows XP, Server 2003                       |Read-only                                                                           |Write support available with third party utilities
-Windows Vista, 7, 8, 10                       |                                                                                    |Referred to by Microsoft as "Live File System"; Requires fake full-disk partition
-Mac OS 9                                      |                                                                                    |
-Mac OS X 10.5 through 10.11                   |                                                                                    |
-macOS 10.12+                                  |                                                                                    |
-Linux 2.6+, 3.x                               |UDF revisions 2.01 and before have read/write.  After UDF revision 2.01, read-only. | 
-AIX 5.2, 5.3, 6.1                             |                                                                                    |
-BeOS, magnussoft ZETA, Haiku                  |                                                                                    |
-DosBox                                        |                                                                                    |
-eComStation, OS/2                             |                                                                                    |Additional-fee drivers on OS/2
-NetBSD 5.0                                    |                                                                                    |
-Solaris 8, 9, 10                              |                                                                                    |
+Operating System             |Read-only                                                                           |Note
+------------------- ---------|------------------------------------------------------------------------------------|----
+Windows XP, Server 2003      |Read-only                                                                           |Write support available with third party utilities
+Windows Vista, 7, 8, 10      |                                                                                    |Referred to by Microsoft as "Live File System"; Requires fake full-disk partition
+Mac OS 9                     |                                                                                    |
+Mac OS X 10.5 through 10.11  |                                                                                    |
+macOS 10.12+                 |                                                                                    |
+Linux 2.6+, 3.x              |UDF revisions 2.01 and before have read/write.  After UDF revision 2.01, read-only. | 
+AIX 5.2, 5.3, 6.1            |                                                                                    |
+BeOS, magnussoft ZETA, Haiku |                                                                                    |
+DosBox                       |                                                                                    |
+eComStation, OS/2            |                                                                                    |Additional-fee drivers on OS/2
+NetBSD 5.0                   |                                                                                    |
+Solaris 8, 9, 10             |                                                                                    |
 
 
 ### Supported with Third-Party Utilities
