@@ -69,9 +69,9 @@ DOS, FreeDOS, Windows 3.11 or older |Filesystems that have an ISO9660 backward c
 Not all operating systems support 4K drives.  If you operating system supports UDF, but not your 4K drive, you still may encounter issues using this script.
 
 ### Windows 4K Drive Support
-The following tables detail Windows support for 4K drives.  Data was adapted from the [Microsoft support policy for 4K sector hard drives in Windows](https://support.microsoft.com/en-us/help/2510009/microsoft-support-policy-for-4k-sector-hard-drives-in-windows) (as retrieved on 2017-06-16).  Overlaid into this table are testing results from the format-udf community.  (Special thanks to @pali for his [testing on XP](https://github.com/JElchison/format-udf/issues/13#issuecomment-302904564).)
+The following tables detail Windows support for 4K drives.  Data was adapted from the [Microsoft support policy for 4K sector hard drives in Windows](https://support.microsoft.com/en-us/help/2510009/microsoft-support-policy-for-4k-sector-hard-drives-in-windows) (as retrieved on 2017-06-16).  Overlaid into this table are testing results from the format-udf community.  (Special thanks to [@pali](https://github.com/pali) for his [testing on XP](https://github.com/JElchison/format-udf/issues/13#issuecomment-302904564).)
 
-Block size / OS                                 |512-byte native                      |[512 emulation](https://en.wikipedia.org/wiki/Advanced_Format#512e) (AKA "512e") |4K native (AKA "4Kn")
+Block size / OS                                 |512-byte native                      |[512 emulation](https://en.wikipedia.org/wiki/Advanced_Format#512e) (AKA "512e") |[4K native](https://en.wikipedia.org/wiki/Advanced_Format#4K_native) (AKA "4Kn")
 ------------------------------------------------|-------------------------------------|---------------------------------------------------------------------------------|----------------------
 Logical block size                              |512 bytes                            |512 bytes                                                                        |4096 bytes
 Physical block size                             |512 bytes                            |4096 bytes                                                                       |4096 bytes
