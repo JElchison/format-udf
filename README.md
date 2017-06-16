@@ -1,55 +1,58 @@
 format-udf
 ==========
 
-Bash script to format a block device (hard drive or Flash drive) in UDF. The output is a drive that can be used for reading/writing across multiple operating system families: Windows, OS X, and Linux. This script should be capable of running in OS X or in Linux.
+Bash script to format a block device (hard drive or Flash drive) in UDF. The output is a drive that can be used for reading/writing across multiple operating system families: Windows, macOS, and Linux. This script should be capable of running in macOS or in Linux.
 
 
 # Features
 * Formats a block device (hard drive or Flash drive) in <a href="https://en.wikipedia.org/wiki/Universal_Disk_Format">Universal Disk Format (UDF)</a>
     * UDF revision 2.01 used for maximal compatibility (see note on Linux support below)
-* Resulting file system can be read/written across multiple operating system families (Windows, OS X, and Linux)
+* Resulting file system can be read/written across multiple operating system families (Windows, macOS, and Linux)
 * Runs on any OS having a Bash environment
+* Optionally wipes device before formatting
 * Ability to override detected device block size
 * Option to force non-interactive mode (useful for scripting)
-* Optionally wipes device before formatting
 * Writes a fake MBR for added compatibility on Windows (optionally disabled)
 
-For the advanced user, this script is also capable of formatting a single existing partition, without modifying the partition table.  Beware that using this method will render the newly formatted UDF partition unusable on OS X (but still usable on Linux and Windows).  (See [#24](https://github.com/JElchison/format-udf/issues/24) for caveats.)  Because of this limitation, the recommendation is to format the entire device.
+For the advanced user, this script is also capable of formatting a single existing partition, without modifying the partition table.  Beware that using this method will render the newly formatted UDF partition unusable on macOS (but still usable on Linux and Windows).  (See [#24](https://github.com/JElchison/format-udf/issues/24) for caveats.)  Because of this limitation, the recommendation is to format the entire device.
 
 
 # UDF OS Support
-Following tables detail operating system support for UDF.  Data was adapted from https://en.wikipedia.org/wiki/Universal_Disk_Format#Compatibility (as retrieved on 2015-Feb-20).
+Not all operating systems support UDF.  The following tables detail operating system support for UDF.  Data was adapted from https://en.wikipedia.org/wiki/Universal_Disk_Format#Compatibility (as retrieved on 2017-06-16).
 
 ### Natively Supported
 
 Both read/write are supported unless otherwise listed below.
 
-Operating System                             |Read-only|Note
----------------------------------------------|---------|----------------------------------------
-Mac OS X 10.5, 10.6, 10.7, 10.8, 10.9, 10.10 |         |
-Windows Vista, 7, 8                          |         |Referred to by Microsoft as "Live File System"; Requires fake full-disk partition
-Windows XP, Server 2003                      |Read-only|Write support available with third party utilities
-Linux 2.6, 3.x                               |UDF revisions 2.01 and before have read/write.  After 2.01, read-only. | 
-AIX 5.2, 5.3, 6.1                            |         |
-BeOS, magnussoft ZETA, Haiku                 |         |
-DosBox                                       |         |
-eComStation, OS/2                            |         |Additional-fee drivers on OS/2
-NetBSD 5.0                                   |         |
+Operating System                              |Read-only                                                                           |Note
+----------------------------------------------|------------------------------------------------------------------------------------|----------------------------------------
+Windows XP, Server 2003                       |Read-only                                                                           |Write support available with third party utilities
+Windows Vista, 7, 8, 10                       |                                                                                    |Referred to by Microsoft as "Live File System"; Requires fake full-disk partition
+Mac OS 9                                      |                                                                                    |
+Mac OS X 10.5 through 10.11                   |                                                                                    |
+macOS 10.12+                                  |                                                                                    |
+Linux 2.6+, 3.x                               |UDF revisions 2.01 and before have read/write.  After UDF revision 2.01, read-only. | 
+AIX 5.2, 5.3, 6.1                             |                                                                                    |
+BeOS, magnussoft ZETA, Haiku                  |                                                                                    |
+DosBox                                        |                                                                                    |
+eComStation, OS/2                             |                                                                                    |Additional-fee drivers on OS/2
+NetBSD 5.0                                    |                                                                                    |
+Solaris 8, 9, 10                              |                                                                                    |
 
 
 ### Supported with Third-Party Utilities
 
-Operating System                        |Note
-----------------------------------------|------------------------------
-Windows 95 OSR2+, 98, Me                |Utilities include DLA and InCD
-Windows 2000                            |
+Operating System     |Note
+---------------------|------------------------------
+Windows 95 OSR2+, 98 |Utilities include DLA and InCD
+Windows 2000, Me     |
 
 
 ### Not Supported
 
-Operating System                        |Note
-----------------------------------------|-------------------------------------------------
-DOS, FreeDOS, Windows 3.11 or older     |Filesystems that have an ISO9660 backward compatibility structure can be read
+Operating System                    |Note
+------------------------------------|-------------------------------------------------
+DOS, FreeDOS, Windows 3.11 or older |Filesystems that have an ISO9660 backward compatibility structure can be read
 
 
 # Environment
@@ -60,6 +63,25 @@ DOS, FreeDOS, Windows 3.11 or older     |Filesystems that have an ISO9660 backwa
     * *One* of the following:  blockdev, diskutil
     * *One* of the following:  umount, diskutil
     * *One* of the following:  mkudffs, newfs_udf
+
+
+# 4K Drive Support
+Not all operating systems support 4K drives.  If you operating system supports UDF, but not your 4K drive, you still may encounter issues using this script.
+
+### Windows 4K Drive Support
+The following tables detail Windows support for 4K drives.  Data was adapted from the [Microsoft support policy for 4K sector hard drives in Windows](https://support.microsoft.com/en-us/help/2510009/microsoft-support-policy-for-4k-sector-hard-drives-in-windows) (as retrieved on 2017-06-16).  Overlaid into this table are testing results from the format-udf community.  (Special thanks to @pali for his [testing on XP](https://github.com/JElchison/format-udf/issues/13#issuecomment-302904564).)
+
+                                                |512-byte native                      |[Advanced Format](https://en.wikipedia.org/wiki/Advanced_Format) (AKA "512 emulation" or "512e") |4K native (AKA "4Kn")
+------------------------------------------------|-------------------------------------|-------------------------------------------------------------------------------------------------|----------------------
+Logical sector size                             |512 bytes                            |512 bytes                                                                                        |4096 bytes
+Physical sector size                            |512 bytes                            |4096 bytes                                                                                       |4096 bytes
+Windows XP                                      |Supported; works                     |Unsupported                                                                                      |Unsupported
+Windows XP Pro x64, Server 2003, Server 2003 R2 |Supported; likely works but untested |Unsupported                                                                                      |Unsupported
+Windows Vista, Server 2008                      |Supported; likely works but untested |Supported; likely works but untested                                                             |Unsupported
+Windows 7, Server 2008 R2                       |Supported; likely works but untested |Supported; likely works but untested                                                             |Unsupported
+Windows 8, Server 2012                          |Supported; likely works but untested |Supported; likely works but untested                                                             |Supported; likely works but untested
+Windows 8.1, Server 2012 R2                     |Supported; likely works but untested |Unsupported                                                                                      |Unsupported
+Windows 10, Server 2016                         |Supported; likely works but untested |Unsupported                                                                                      |Supported; likely works but untested
 
 
 # Prerequisites
@@ -114,7 +136,7 @@ Usage:  ./format-udf.sh [-b BLOCK_SIZE] [-f] [-p PARTITION_TYPE] [-w WIPE_METHOD
     device
         Device to format.  Should be of the form:
           * sdx   (Linux, where 'x' is a letter) or
-          * diskN (OS X,  where 'N' is a number)
+          * diskN (macOS,  where 'N' is a number)
 
     label
         Label to apply to formatted device.
@@ -176,7 +198,7 @@ start=195371567, blocks=1, type=ANCHOR
 Please disconnect/reconnect your drive now.
 ```
 
-On OS X:
+On macOS:
 ```
 computer:~ user$ ./format-udf.sh disk2 "My UDF External Drive"
 [+] Testing dependencies...
@@ -221,32 +243,32 @@ Please disconnect/reconnect your drive now.
 
 As tested in the lab...
 
-Device Type | Block Size | Formatted on | Inserted on Ubuntu | Inserted on OS X
-------------|------------|--------------|--------------------|-----------------
-Flash       | 512        | Ubuntu 14.04 | Success            | Success
-Flash       | 512        | OS X 10.11   | Success except label, see [#11](https://github.com/JElchison/format-udf/issues/11)     | Success
-HDD (USB)   | 512        | Ubuntu 14.04 | Success            | Success
-HDD (USB)   | 512        | OS X 10.11   | Success except label, see [#11](https://github.com/JElchison/format-udf/issues/11)     | Success
+Device Type | Block Size | Formatted on | Inserted on Ubuntu                                                                 | Inserted on macOS
+------------|------------|--------------|------------------------------------------------------------------------------------|-----------------
+Flash       | 512        | Ubuntu 14.04 | Success                                                                            | Success
+Flash       | 512        | macOS 10.11  | Success except label, see [#11](https://github.com/JElchison/format-udf/issues/11) | Success
+HDD (USB)   | 512        | Ubuntu 14.04 | Success                                                                            | Success
+HDD (USB)   | 512        | macOS 10.11  | Success except label, see [#11](https://github.com/JElchison/format-udf/issues/11) | Success
 
 ### Block Size
 
-If's extremely important that format-udf.sh use the correct block size when formatting your drive.  The script will attempt to detect and use the correct block size.  However, in rare cases (such as [#13](https://github.com/JElchison/format-udf/issues/13)), Linux can [lie](https://bugzilla.kernel.org/show_bug.cgi?id=102271) about the block size.  OS X is known to report the incorrect block size in certain scenarios as well.  In these cases, the format-udf `-b BLOCK_SIZE` option can be used to explicitly set it.
+If's extremely important that format-udf.sh use the correct block size when formatting your drive.  The script will attempt to detect and use the correct (logical) block size.  However, in rare cases, Linux can [lie](https://bugzilla.kernel.org/show_bug.cgi?id=102271) about the block size.  macOS is known to report the incorrect block size in certain scenarios as well.  In these cases, the format-udf `-b BLOCK_SIZE` option can be used to explicitly override the detected block size value.
 
-If the wrong block size is used (i.e. one that doesn't match the geometry of your drive), the resultant drive will likely have non-optimal performance issues, and may not use the drive's entire storage capacity.
+If the wrong block size is used while formatting (i.e. one that doesn't match the logical block size of your drive), the resultant drive will likely have OS compatibility issues and suffer from non-optimal performance issues.
 
-In the same way, it's just as important that the resultant drive be mounted using the correct block size.  Many operating systems will only attempt one block size (usually whatever the mount utility defaults to).  If your block size isn't the OS's default, then auto-mounting likely will not work on your OS.  While a small nuisance, manual mounting attempts should still succeed for nonstandard block sizes.
+In the same way, it's just as important that the resultant drive be mounted using the correct block size.  Many operating systems will only attempt one block size (usually whatever the mount utility defaults to).  For example, In order to mount a UDF device, Windows seems to require that the UDF file system use a block size equal to the logical block size.  If your block size isn't the OS's default, then auto-mounting likely will not work on your OS.  While a small nuisance, manual mounting attempts should still succeed for nonstandard block sizes.
 
 Example of how to manually mount on Linux:
 ```
 $ mount -t udf -o bs=4096 /dev/sdX /mnt/mount-point
 ```
 
-Example of how to manually mount on OS X:
+Example of how to manually mount on macOS:
 ```
 $ sudo mount_udf -b 4096 /dev/diskN /Volumes/MountPoint
 ```
 
-Sadly, anything with block size different than 512 doesn't seem to mount on Windows.
+Sadly, anything with block size different than 512 doesn't seem to mount on Windows XP.
 
 For more info, see [#12](https://github.com/JElchison/format-udf/issues/12), [#16](https://github.com/JElchison/format-udf/issues/16), and [#31](https://github.com/JElchison/format-udf/issues/31).
 
@@ -254,26 +276,24 @@ For more info, see [#12](https://github.com/JElchison/format-udf/issues/12), [#1
 
 For maximal compatibility, use format-udf on an entire device in one of the following configurations:
 * Run format-udf on Linux
-* Run format-udf on OS X, but modify the drive label using Linux or Windows
+* Run format-udf on macOS, but modify the drive label using Linux or Windows
 
 
 # A Fake Partition Table to Fake Out Windows
 
 As mentioned by Pieter [here](https://web.archive.org/web/20151103171649/http://sipa.ulyssis.org/2010/02/filesystems-for-portable-disks/), Windows does not support hard disks without a partition table.  This is strange because Windows does not apply the same limitation to flash drives.
 
-To make matters worse, OS X only uses UDF disks that utilize the full disk (not just a partition).
+To make matters worse, macOS only uses UDF disks that utilize the full disk (not just a partition).
 
 The solution, as suggested by Pieter, is to place a fake partition table (via [MBR](https://en.wikipedia.org/wiki/Master_boot_record)) in the first block of the drive, which lists a single entire-disk partition.  This works because UDF (perhaps intentionally) doesn't utilize the first block.  Unfortunately, there has been no easy way to do this, while juggling all of the other variables (such as device physical block size).
 
-format-udf writes such a fake MBR for added compatibility on Windows.
-
-If this is not what you desire, you can disable the MBR with `-p none`.
+format-udf writes such a fake MBR for added compatibility on Windows.  If this is not what you desire, you can disable the MBR with `-p none`.
 
 After installing GRUB2 on a partitionless drive, you can use `fdisk` to set the partition as active if your BIOS can't boot from partitionless drives. (Thanks to @tome- for the tip.)
 
 
 # See Also
 
-* [Sharing a Hard/Flash Drive Across Windows, OS X, and Linux with UDF](https://j0nam1el.wordpress.com/2015/02/20/sharing-a-hardflash-drive-across-windows-os-x-and-linux-with-udf/)
+* [Sharing a Hard/Flash Drive Across Windows, macOS, and Linux with UDF](https://j0nam1el.wordpress.com/2015/02/20/sharing-a-hardflash-drive-across-windows-os-x-and-linux-with-udf/)
 * [Universal Disk Format on Wikipedia](https://en.wikipedia.org/wiki/Universal_Disk_Format)
 * [Wenguang's Introduction to Universal Disk Format (UDF)](https://sites.google.com/site/udfintro/)
