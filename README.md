@@ -61,17 +61,17 @@ Not all operating systems support 4K drives.  If you operating system supports U
 ### Windows 4K Drive Support
 The following tables detail Windows support for 4K drives.  Data was adapted from the [Microsoft support policy for 4K sector hard drives in Windows](https://support.microsoft.com/en-us/help/2510009/microsoft-support-policy-for-4k-sector-hard-drives-in-windows) (as retrieved on 2017-06-16).  Overlaid into this table are testing results from the format-udf community.  (Special thanks to [@pali](https://github.com/pali) for his [testing on XP](https://github.com/JElchison/format-udf/issues/13#issuecomment-302904564).)
 
-Block size / OS                                 |512-byte native                      |[512 emulation](https://en.wikipedia.org/wiki/Advanced_Format#512e) (AKA "512e") |[4K native](https://en.wikipedia.org/wiki/Advanced_Format#4K_native) (AKA "4Kn")
-------------------------------------------------|-------------------------------------|---------------------------------------------------------------------------------|----------------------
-Logical block size                              |512 bytes                            |512 bytes                                                                        |4096 bytes
-Physical block size                             |512 bytes                            |4096 bytes                                                                       |4096 bytes
-Windows XP                                      |Supported; works                     |Unsupported                                                                      |Unsupported
-Windows XP Pro x64, Server 2003, Server 2003 R2 |Supported; likely works but untested |Unsupported                                                                      |Unsupported
-Windows Vista, Server 2008                      |Supported; likely works but untested |Supported; likely works but untested                                             |Unsupported
-Windows 7, Server 2008 R2                       |Supported; likely works but untested |Supported; likely works but untested                                             |Unsupported
-Windows 8, Server 2012                          |Supported; likely works but untested |Supported; likely works but untested                                             |Supported; likely works but untested
-Windows 8.1, Server 2012 R2                     |Supported; likely works but untested |Unsupported                                                                      |Unsupported
-Windows 10, Server 2016                         |Supported; likely works but untested |Unsupported                                                                      |Supported; likely works but untested
+Block size / OS                                 |512-byte native                                                                              |[512 emulation](https://en.wikipedia.org/wiki/Advanced_Format#512e) (AKA "512e") |[4K native](https://en.wikipedia.org/wiki/Advanced_Format#4K_native) (AKA "4Kn")
+------------------------------------------------|---------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------|----------------------
+Logical block size                              |512 bytes                                                                                    |512 bytes                                                                        |4096 bytes
+Physical block size                             |512 bytes                                                                                    |4096 bytes                                                                       |4096 bytes
+Windows XP                                      |Supported; [works](https://github.com/JElchison/format-udf/issues/13#issuecomment-302904564) |Unsupported                                                                      |Unsupported
+Windows XP Pro x64, Server 2003, Server 2003 R2 |Supported; likely works but untested                                                         |Unsupported                                                                      |Unsupported
+Windows Vista, Server 2008                      |Supported; likely works but untested                                                         |Supported; likely works but untested                                             |Unsupported
+Windows 7, Server 2008 R2                       |Supported; likely works but untested                                                         |Supported; likely works but untested                                             |Unsupported
+Windows 8, Server 2012                          |Supported; likely works but untested                                                         |Supported; likely works but untested                                             |Supported; likely works but untested
+Windows 8.1, Server 2012 R2                     |Supported; likely works but untested                                                         |Unsupported                                                                      |Unsupported
+Windows 10, Server 2016                         |Supported; likely works but untested                                                         |Unsupported                                                                      |Supported; likely works but untested
 
 
 # Environment
