@@ -134,7 +134,7 @@ Usage:  ./format-udf.sh [-b BLOCK_SIZE] [-f] [-p PARTITION_TYPE] [-w WIPE_METHOD
     device
         Device to format.  Should be of the form:
           * sdx   (Linux, where 'x' is a letter) or
-          * diskN (macOS,  where 'N' is a number)
+          * diskN (macOS, where 'N' is a number)
 
     label
         Label to apply to formatted device.

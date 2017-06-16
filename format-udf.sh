@@ -2,11 +2,11 @@
 
 # format-udf.sh
 #
-# Bash script to format a block device (hard drive or Flash drive) in UDF. The output is a drive that can be used for reading/writing across multiple operating system families: Windows, OS X, and Linux. This script should be capable of running in OS X or in Linux.
+# Bash script to format a block device (hard drive or Flash drive) in UDF. The output is a drive that can be used for reading/writing across multiple operating system families: Windows, macOS, and Linux. This script should be capable of running in macOS or in Linux.
 #
 # Version 1.4.4
 #
-# Copyright (C) 2016 Jonathan Elchison <JElchison@gmail.com>
+# Copyright (C) 2017 Jonathan Elchison <JElchison@gmail.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -86,7 +86,7 @@ Usage:  $0 [-b BLOCK_SIZE] [-f] [-p PARTITION_TYPE] [-w WIPE_METHOD] device labe
     device
         Device to format.  Should be of the form:
           * sdx   (Linux, where 'x' is a letter) or
-          * diskN (OS X,  where 'N' is a number)
+          * diskN (macOS, where 'N' is a number)
 
     label
         Label to apply to formatted device.
@@ -229,7 +229,7 @@ echo -n "[+] Looking for unmount tool..."
 # `true` is so that a failure here doesn't cause entire script to exit prematurely
 TOOL_UMOUNT=$(which umount 2>/dev/null) || true
 # NOTE: 'TOOL_DISKUTIL' has already been set above.  no need to set it again here.
-# prefer 'diskutil' if available, as it's required on OS X (even if 'umount' is present)
+# prefer 'diskutil' if available, as it's required on macOS (even if 'umount' is present)
 if [[ -x "$TOOL_DISKUTIL" ]]; then
     TOOL_UNMOUNT=$TOOL_DISKUTIL
 elif [[ -x "$TOOL_UMOUNT" ]]; then
@@ -412,7 +412,7 @@ if [[ -z $FORCE ]]; then
     if [[ "$PARENT_DEVICE" != "$DEVICE" ]]; then
         echo "You are attempting to format a single partition (as opposed to entire device)."
         echo "For maximal compatibility, the recommendation is to format the entire device."
-        echo "If you continue, the resultant UDF partition will not be recognized on OS X."
+        echo "If you continue, the resultant UDF partition will not be recognized on macOS."
         read -p "Type 'yes' if this is what you intend:  " YES_CASE
         YES=$(echo "$YES_CASE" | tr '[:upper:]' '[:lower:]')
         if [[ $YES != "yes" ]]; then
