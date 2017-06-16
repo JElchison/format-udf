@@ -105,8 +105,6 @@ Usage:  ./format-udf.sh [-b BLOCK_SIZE] [-f] [-p PARTITION_TYPE] [-w WIPE_METHOD
         If absent, defaults to value reported by blockdev/diskutil.
         This is useful in light of the following Linux kernel bug:
             https://bugzilla.kernel.org/show_bug.cgi?id=102271
-        See also:
-            https://github.com/JElchison/format-udf/issues/13
 
     -f
         Forces non-interactive mode.  Useful for scripting.
