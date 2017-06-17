@@ -138,8 +138,8 @@ function ntohl {
 #   None
 function entire_disk_partition_entry {
     TOTAL_SIZE=$1
-    BLOCK_SIZE=$2
-    MAX_LBA=$((TOTAL_SIZE/BLOCK_SIZE))
+    LOGICAL_BLOCK_SIZE=$2
+    MAX_LBA=$((TOTAL_SIZE/LOGICAL_BLOCK_SIZE))
 
     # status / physical drive (bit 7 set: active / bootable, old MBRs only accept 80h), 00h: inactive, 01h–7Fh: invalid)
     echo -n "00"
@@ -199,6 +199,7 @@ if [[ ! -x $(which cat 2>/dev/null) ]] ||
    [[ ! -x $(which awk 2>/dev/null) ]] ||
    [[ ! -x $(which printf 2>/dev/null) ]] ||
    [[ ! -x $(which sed 2>/dev/null) ]] ||
+   [[ ! -x $(which tr 2>/dev/null) ]] ||
    [[ ! -x $(which dd 2>/dev/null) ]] ||
    [[ ! -x $(which xxd 2>/dev/null) ]]; then
     echo "[-] Dependencies unmet.  Please verify that the following are installed, executable, and in the PATH:  cat, grep, egrep, mount, test, true, false, awk, printf, sed, dd, xxd" >&2
@@ -388,6 +389,109 @@ fi
 
 
 ###############################################################################
+# gather information - logical block size
+###############################################################################
+
+echo "[+] Detecting logical block size..."
+if [[ $TOOL_DRIVE_LISTING = "$TOOL_BLOCKDEV" ]]; then
+    LOGICAL_BLOCK_SIZE=$(sudo blockdev --getss "/dev/$DEVICE")
+elif [[ -x $TOOL_DISKUTIL ]]; then
+    LOGICAL_BLOCK_SIZE=$(ioreg -c IOMedia -r -d 1 | tr '\n' '\0' | egrep -ao "\{$[^\+]*$DEVICE.*?\}$" | tr '\0' '\n' | grep 'Physical Block Size' | awk '{print $5}')
+else
+    echo "[-] Cannot detect logical block size" >&2
+    exit 1
+fi
+
+# validate that $LOGICAL_BLOCK_SIZE is numeric > 0
+echo "[+] Validating detected logical block size..."
+(echo "$LOGICAL_BLOCK_SIZE" | egrep -q '^[0-9]+$') || (echo "[-] Could not detect logical block size" >&2; false)
+[[ $LOGICAL_BLOCK_SIZE -gt 0 ]] || (echo "[-] Could not detect logical block size" >&2; false)
+
+echo "[*] Detected logical block size of $LOGICAL_BLOCK_SIZE"
+
+
+###############################################################################
+# gather information - physical block size
+###############################################################################
+
+echo "[+] Detecting physical block size..."
+if [[ $TOOL_DRIVE_LISTING = "$TOOL_BLOCKDEV" ]]; then
+    PHYSICAL_BLOCK_SIZE=$(sudo blockdev --getpbsz "/dev/$DEVICE")
+elif [[ -x $TOOL_DISKUTIL ]]; then
+    PHYSICAL_BLOCK_SIZE=$(ioreg -c IOMedia -r -d 1 | tr '\n' '\0' | egrep -ao "\{$[^\+]*$DEVICE.*?\}$" | tr '\0' '\n' | grep 'Logical Block Size' | awk '{print $5}')
+else
+    echo "[-] Cannot detect physical block size" >&2
+    exit 1
+fi
+
+# validate that $PHYSICAL_BLOCK_SIZE is numeric > 0
+echo "[+] Validating detected physical block size..."
+(echo "$PHYSICAL_BLOCK_SIZE" | egrep -q '^[0-9]+$') || (echo "[-] Could not detect physical block size" >&2; false)
+[[ $PHYSICAL_BLOCK_SIZE -gt 0 ]] || (echo "[-] Could not detect physical block size" >&2; false)
+
+echo "[*] Detected physical block size of $PHYSICAL_BLOCK_SIZE"
+
+
+###############################################################################
+# gather information - total size
+###############################################################################
+
+echo "[+] Detecting total size..."
+if [[ $TOOL_DRIVE_LISTING = "$TOOL_BLOCKDEV" ]]; then
+    TOTAL_SIZE=$(sudo blockdev --getsize64 "/dev/$DEVICE")
+elif [[ -x $TOOL_DISKUTIL ]]; then
+    TOTAL_SIZE=$(diskutil info "$DEVICE" | egrep -i '(Total|Disk) Size' | awk -F ':' '{print $2}' | egrep -oi '\([0-9]+ B' | sed 's/[^0-9]//g')
+else
+    echo "[-] Cannot detect total size" >&2
+    exit 1
+fi
+
+# validate that $TOTAL_SIZE is numeric > 0
+echo "[+] Validating detected total size..."
+(echo "$TOTAL_SIZE" | egrep -q '^[0-9]+$') || (echo "[-] Could not detect valid total size" >&2; false)
+[[ $TOTAL_SIZE -gt 0 ]] || (echo "[-] Could not detect valid total size" >&2; false)
+
+echo "[*] Detected total size of $TOTAL_SIZE"
+
+
+###############################################################################
+# check for Advanced Format drive
+###############################################################################
+
+if [[ -z $FORCE ]]; then
+    if [[ $LOGICAL_BLOCK_SIZE -ne 512 -o $PHYSICAL_BLOCK_SIZE -ne 512 ]]; then
+        if [[ $LOGICAL_BLOCK_SIZE -eq 512 -a $PHYSICAL_BLOCK_SIZE -eq 4096 ]]; then
+            # TODO    
+        elif [[ $LOGICAL_BLOCK_SIZE -eq 4096 -a $PHYSICAL_BLOCK_SIZE -eq 4096 ]]; then 
+            # TODO    
+        else
+            # TODO    
+        fi
+    fi
+fi
+
+
+###############################################################################
+# choose file system block size
+###############################################################################
+
+if [[ -z $ARG_BLOCK_SIZE ]]; then
+    # Windows requires that the file system have a block size that matches logical block size
+    FILE_SYSTEM_BLOCK_SIZE=$LOGICAL_BLOCK_SIZE
+else
+    echo "[+] Overriding logical block size..."
+    FILE_SYSTEM_BLOCK_SIZE=$ARG_BLOCK_SIZE
+fi
+
+# validate that $FILE_SYSTEM_BLOCK_SIZE is numeric > 0
+echo "[+] Validating file system block size..."
+(echo "$FILE_SYSTEM_BLOCK_SIZE" | egrep -q '^[0-9]+$') || (echo "[-] Invalid file system block size" >&2; false)
+[[ $FILE_SYSTEM_BLOCK_SIZE -gt 0 ]] || (echo "[-] Invalid file system block size" >&2; false)
+
+echo "[*] Using file system block size of $FILE_SYSTEM_BLOCK_SIZE"
+
+
+###############################################################################
 # print drive information
 ###############################################################################
 
@@ -431,53 +535,6 @@ fi
 
 
 ###############################################################################
-# gather information - total size
-###############################################################################
-
-echo "[+] Detecting total size..."
-if [[ $TOOL_DRIVE_LISTING = "$TOOL_BLOCKDEV" ]]; then
-    TOTAL_SIZE=$(sudo blockdev --getsize64 "/dev/$DEVICE")
-elif [[ -x $TOOL_DISKUTIL ]]; then
-    TOTAL_SIZE=$(diskutil info "$DEVICE" | egrep -i '(Total|Disk) Size' | awk -F ':' '{print $2}' | egrep -oi '\([0-9]+ B' | sed 's/[^0-9]//g')
-else
-    echo "[-] Cannot detect total size" >&2
-    exit 1
-fi
-echo "[*] Using total size of $TOTAL_SIZE"
-
-# validate that $TOTAL_SIZE is numeric > 0
-echo "[+] Validating detected total size..."
-(echo "$TOTAL_SIZE" | egrep -q '^[0-9]+$') || (echo "[-] Could not detect valid total size" >&2; false)
-[[ $TOTAL_SIZE -gt 0 ]] || (echo "[-] Could not detect valid total size" >&2; false)
-
-
-###############################################################################
-# gather information - physical block size
-###############################################################################
-
-if [[ -z $ARG_BLOCK_SIZE ]]; then
-    echo "[+] Detecting physical block size..."
-    if [[ $TOOL_DRIVE_LISTING = "$TOOL_BLOCKDEV" ]]; then
-        BLOCK_SIZE=$(sudo blockdev --getpbsz "/dev/$DEVICE")
-    elif [[ -x $TOOL_DISKUTIL ]]; then
-        BLOCK_SIZE=$(diskutil info "$DEVICE" | grep -i 'Device Block Size' | awk -F ':' '{print $2}' | awk '{print $1}')
-    else
-        echo "[-] Cannot detect physical block size" >&2
-        exit 1
-    fi
-else
-    echo "[+] Overriding physical block size..."
-    BLOCK_SIZE=$ARG_BLOCK_SIZE
-fi
-echo "[*] Using block size of $BLOCK_SIZE"
-
-# validate that $BLOCK_SIZE is numeric > 0
-echo "[+] Validating detected block size..."
-(echo "$BLOCK_SIZE" | egrep -q '^[0-9]+$') || (echo "[-] Invalid block size" >&2; false)
-[[ $BLOCK_SIZE -gt 0 ]] || (echo "[-] Invalid block size" >&2; false)
-
-
-###############################################################################
 # unmount device (if mounted)
 ###############################################################################
 
@@ -507,7 +564,7 @@ case $WIPE_METHOD in
         ;;
     zero)
         echo "[+] Overwriting device with zeros.  This will likely take a LONG time..."
-        sudo dd if=/dev/zero of="/dev/$DEVICE" bs="$BLOCK_SIZE" || true
+        sudo dd if=/dev/zero of="/dev/$DEVICE" bs="$LOGICAL_BLOCK_SIZE" || true
         ;;
     scrub)
         echo "[+] Scrubbing device with random patterns.  This will likely take a LONG time..."
@@ -526,7 +583,7 @@ esac
 
 echo "[+] Zeroing out first chunk of device..."
 # 4096 was arbitrarily chosen to be "big enough" to delete first chunk of device
-sudo dd if=/dev/zero of="/dev/$DEVICE" bs="$BLOCK_SIZE" count=4096
+sudo dd if=/dev/zero of="/dev/$DEVICE" bs="$LOGICAL_BLOCK_SIZE" count=4096
 
 
 ###############################################################################
@@ -541,7 +598,7 @@ if [[ $TOOL_UDF = "$TOOL_MKUDFFS" ]]; then
     # --lvid       - logical volume identifier
     # --vid        - volume identifier
     # --media-type - "hd" type covers both hard drives and USB drives
-    (sudo mkudffs --utf8 --blocksize="$BLOCK_SIZE" --udfrev=0x0201 --lvid="$LABEL" --vid="$LABEL" --media-type=hd "/dev/$DEVICE") || (echo "[-] Format failed!" >&2; false)
+    (sudo mkudffs --utf8 --blocksize="$FILE_SYSTEM_BLOCK_SIZE" --udfrev=0x0201 --lvid="$LABEL" --vid="$LABEL" --media-type=hd "/dev/$DEVICE") || (echo "[-] Format failed!" >&2; false)
 elif [[ $TOOL_UDF = "$TOOL_NEWFS_UDF" ]]; then
     # -b    - the size of blocks in bytes. should be the same as the drive's physical block size.
     # -m    - "blk" type covers both hard drives and USB drives
@@ -549,7 +606,7 @@ elif [[ $TOOL_UDF = "$TOOL_NEWFS_UDF" ]]; then
     # -r    - the udf revision to use.  2.01 is the latest revision available that supports writing in Linux.
     # -v    - volume identifier
     # --enc - encode volume name in UTF8
-    (sudo newfs_udf -b "$BLOCK_SIZE" -m blk -t ow -r 2.01 -v "$LABEL" --enc utf8 "/dev/$DEVICE") || (echo "[-] Format failed!" >&2; false)
+    (sudo newfs_udf -b "$FILE_SYSTEM_BLOCK_SIZE" -m blk -t ow -r 2.01 -v "$LABEL" --enc utf8 "/dev/$DEVICE") || (echo "[-] Format failed!" >&2; false)
 else
     echo "[-] Internal error 4" >&2
     exit 1
@@ -567,7 +624,7 @@ case $PARTITION_TYPE in
     mbr)
         echo "[+] Writing fake MBR..."
         # first block has already been zero'd.  start by writing the (only) partition entry at its correct offset.
-        entire_disk_partition_entry "$TOTAL_SIZE" "$BLOCK_SIZE" | xxd -r -p | sudo dd of="/dev/$DEVICE" bs=1 seek=446 count=16
+        entire_disk_partition_entry "$TOTAL_SIZE" "$LOGICAL_BLOCK_SIZE" | xxd -r -p | sudo dd of="/dev/$DEVICE" bs=1 seek=446 count=16
         # Boot signature at the end of the block
         echo -n 55aa | xxd -r -p | sudo dd of="/dev/$DEVICE" bs=1 seek=510 count=2
         ;;
