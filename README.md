@@ -45,7 +45,7 @@ Solaris 8, 9, 10             |                                                  
 Operating System     |Note
 ---------------------|------------------------------
 Windows 95 OSR2+, 98 |Utilities include DLA and InCD
-Windows 2000, Me     |
+Windows 2000, ME     |
 
 
 ### Not Supported
