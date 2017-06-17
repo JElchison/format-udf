@@ -80,11 +80,11 @@ If you have conducted testing and would like to update this table to benefit fut
 # Environment
 * Any OS having a Bash environment
 * The following tools must be installed, executable, and in the PATH:
-    * printf
-    * xxd
-    * *One* of the following:  blockdev, diskutil
-    * *One* of the following:  umount, diskutil
-    * *One* of the following:  mkudffs, newfs_udf
+    * `printf`
+    * `xxd`
+    * *One* of the following:  `blockdev`, `diskutil`
+    * *One* of the following:  `umount`, `diskutil`
+    * *One* of the following:  `mkudffs`, `newfs_udf`
 
 
 # Prerequisites
@@ -94,7 +94,7 @@ To install necessary prerequisites on Ubuntu:
 
 
 # Installation
-Simply copy format-udf.sh to a directory of your choosing.  Don't forget to make it executable:
+format-udf is a self-contained script.  Simply copy format-udf.sh to a directory of your choosing.  Don't forget to make it executable:
 
     chmod +x format-udf.sh
 
