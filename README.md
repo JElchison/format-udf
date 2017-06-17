@@ -17,6 +17,20 @@ Bash script to format a block device (hard drive or Flash drive) in UDF. The out
 For the advanced user, format-udf is also capable of formatting a single existing partition, without modifying the partition table.  Beware that using this method will render the newly formatted UDF partition unusable on macOS (but still usable on Linux and Windows).  (See [#24](https://github.com/JElchison/format-udf/issues/24) for caveats.)  Because of this limitation, the recommendation is to format the entire device.
 
 
+# Why?
+format-udf was created to address some OS-specific quirks that prevent a naively-formatted UDF device from working across various operating systems.  Here are some of the complicating factors, which format-udf aims to abstract away:
+
+* Different operating systems support different versions of the UDF specification.  Some OS versions only offer read-only support.
+* Windows seems to only mount UDF devices if the file system block size matches the device's logical block size
+* Different operating systems (like Windows XP) only attempt mounting UDF file systems with a hard-coded block size
+* Windows does not support hard disks without a partition table.  (This is strange because Windows does not apply the same limitation to flash drives.)
+* macOS seems to only mount UDF file systems that utilize the full disk (not just a partition)
+
+At first glance, these constraints appear to be in partial conflict.  The solution, as suggested by [Pieter](https://web.archive.org/web/20151103171649/http://sipa.ulyssis.org/2010/02/filesystems-for-portable-disks/), is to place a fake partition table (via [MBR](https://en.wikipedia.org/wiki/Master_boot_record)) in the first block of the drive, which lists a single entire-disk partition.  This works because UDF (perhaps intentionally) doesn't utilize the first block.  Unfortunately, there has been no easy way to do this, while juggling all of the other variables (such as device logical block size).
+
+format-udf writes such a fake MBR for added compatibility on Windows.  If this is not what you desire, you can disable the MBR with `-p none`.
+
+
 # UDF OS Support
 Not all operating systems support UDF.  The following tables detail operating system support for UDF.  Data was adapted from https://en.wikipedia.org/wiki/Universal_Disk_Format#Compatibility (as retrieved on 2017-06-16).
 
@@ -43,7 +57,7 @@ Solaris 8, 9, 10             |                                                  
 ### Supported with Third-Party Utilities
 
 Operating System     |Note
----------------------|------------------------------
+---------------------|----
 Windows 95 OSR2+, 98 |Utilities include DLA and InCD
 Windows 2000, ME     |
 
@@ -51,8 +65,8 @@ Windows 2000, ME     |
 ### Not Supported
 
 Operating System                    |Note
-------------------------------------|-------------------------------------------------
-DOS, FreeDOS, Windows 3.11 or older |Filesystems that have an ISO9660 backward compatibility structure can be read
+------------------------------------|----
+DOS, FreeDOS, Windows 3.11 or older |File systems that have an ISO9660 backward compatibility structure can be read
 
 
 # 4K Drive Support
@@ -240,16 +254,7 @@ write to block device: /dev/disk2  last written block address: 195371567
 Please disconnect/reconnect your drive now.
 ```
 
-# Expected Behavior
-
-As tested in the lab...
-
-Device Type | Block Size | Formatted on | Inserted on Ubuntu                                                                 | Inserted on macOS
-------------|------------|--------------|------------------------------------------------------------------------------------|-----------------
-Flash       | 512        | Ubuntu 14.04 | Success                                                                            | Success
-Flash       | 512        | macOS 10.11  | Success except label, see [#11](https://github.com/JElchison/format-udf/issues/11) | Success
-HDD (USB)   | 512        | Ubuntu 14.04 | Success                                                                            | Success
-HDD (USB)   | 512        | macOS 10.11  | Success except label, see [#11](https://github.com/JElchison/format-udf/issues/11) | Success
+# Caveats
 
 ### Block Size
 
@@ -283,22 +288,15 @@ For a human-readable device label, use format-udf in one of the following config
 * Run format-udf on Linux
 * Run format-udf on macOS, but modify the drive label using Linux or Windows
 
+### Miscellaneous Tips
 
-# A Fake Partition Table to Fake Out Windows
-
-As mentioned by Pieter [here](https://web.archive.org/web/20151103171649/http://sipa.ulyssis.org/2010/02/filesystems-for-portable-disks/), Windows does not support hard disks without a partition table.  This is strange because Windows does not apply the same limitation to flash drives.
-
-To make matters worse, macOS only uses UDF disks that utilize the full disk (not just a partition).
-
-The solution, as suggested by Pieter, is to place a fake partition table (via [MBR](https://en.wikipedia.org/wiki/Master_boot_record)) in the first block of the drive, which lists a single entire-disk partition.  This works because UDF (perhaps intentionally) doesn't utilize the first block.  Unfortunately, there has been no easy way to do this, while juggling all of the other variables (such as device physical block size).
-
-format-udf writes such a fake MBR for added compatibility on Windows.  If this is not what you desire, you can disable the MBR with `-p none`.
-
-After installing GRUB2 on a partitionless drive, you can use `fdisk` to set the partition as active if your BIOS can't boot from partitionless drives. (Thanks to @tome- for the tip.)
+* After installing GRUB2 on a partitionless drive, you can use `fdisk` to set the partition as active if your BIOS can't boot from partitionless drives. (Thanks to @tome- for the tip.)
 
 
 # See Also
 
-* [Sharing a Hard/Flash Drive Across Windows, macOS, and Linux with UDF](https://j0nam1el.wordpress.com/2015/02/20/sharing-a-hardflash-drive-across-windows-os-x-and-linux-with-udf/)
+* [Filesystems for portable disks](https://web.archive.org/web/20151103171649/http://sipa.ulyssis.org/2010/02/filesystems-for-portable-disks/)
 * [Universal Disk Format on Wikipedia](https://en.wikipedia.org/wiki/Universal_Disk_Format)
 * [Wenguang's Introduction to Universal Disk Format (UDF)](https://sites.google.com/site/udfintro/)
+* [UDF Specifications](http://www.osta.org/specs/)
+* [Sharing a Hard/Flash Drive Across Windows, OS X, and Linux with UDF](https://j0nam1el.wordpress.com/2015/02/20/sharing-a-hardflash-drive-across-windows-os-x-and-linux-with-udf/)
