@@ -35,7 +35,6 @@ format-udf writes such a fake MBR for added compatibility on Windows.  If this i
 Not all operating systems support UDF.  The following tables detail operating system support for UDF.  Data was adapted from https://en.wikipedia.org/wiki/Universal_Disk_Format#Compatibility (as retrieved on 2017-06-16).
 
 ### Natively Supported
-
 Both read/write are supported unless otherwise listed below.
 
 Operating System             |Read-only                                                                           |Note
@@ -257,8 +256,7 @@ Please disconnect/reconnect your drive now.
 # Caveats
 
 ### Block Size
-
-If's extremely important that format-udf.sh use the correct block size when formatting your drive.  format-udf will attempt to detect and use the correct (logical) block size.  However, in rare cases, Linux can [lie](https://bugzilla.kernel.org/show_bug.cgi?id=102271) about the block size.  macOS is known to report the incorrect block size in certain scenarios as well.  In these cases, the format-udf `-b BLOCK_SIZE` option can be used to explicitly override the detected block size value.
+If's extremely important that format-udf use the correct block size when formatting your drive.  format-udf will attempt to detect and use the correct (logical) block size.  However, in rare cases, Linux can [lie](https://bugzilla.kernel.org/show_bug.cgi?id=102271) about the block size.  macOS is known to report the incorrect block size in certain scenarios as well.  In these cases, the format-udf `-b BLOCK_SIZE` option can be used to explicitly override the detected block size value.
 
 If the wrong block size is used while formatting (i.e. one that doesn't match the logical block size of your drive), the resultant drive will likely have OS compatibility issues and suffer from non-optimal performance issues.
 
@@ -276,10 +274,17 @@ $ sudo mount_udf -b 4096 /dev/diskN /Volumes/MountPoint
 
 Sadly, anything with block size different than 512 doesn't seem to mount on Windows XP.
 
-For more info, see [#12](https://github.com/JElchison/format-udf/issues/12), [#16](https://github.com/JElchison/format-udf/issues/16), and [#31](https://github.com/JElchison/format-udf/issues/31).
+For more info, see [#12](https://github.com/JElchison/format-udf/issues/12), [#13](https://github.com/JElchison/format-udf/issues/13), [#16](https://github.com/JElchison/format-udf/issues/16), and [#31](https://github.com/JElchison/format-udf/issues/31).
+
+### Maximum UDF File System Capacity
+The UDF format has a maximum of 2^32 blocks.  With format-udf, these blocks equate to logical blocks.
+
+* If your drive's logical block size is 512 bytes, then your maximum UDF file system capacity will be 2 TiB
+* If your drive's logical block size is 4096 bytes, then your maximum UDF file system capacity will be 16 TiB
+
+If your drive has capacity in excess of this maximum size, the extra capacity will not be used.  This is a limitation of UDF itself.
 
 ### For Best Results
-
 For maximal OS compatibility, use format-udf on a device having a logical block size of 512 bytes.  This will limit your total capacity to 2 TiB, but the resultant device should work on the most operating systems.
 
 For maximal resultant UDF file system capacity, use use format-udf on a device having a logical block size of 4096 bytes.  This will increase your total capacity (from 2 TiB) to 16 TiB, but will limit the number/types of operating systems that will be able to mount/read/write the resultant device.  See compatibility tables above for more detail.
