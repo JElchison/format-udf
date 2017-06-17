@@ -56,7 +56,7 @@ DOS, FreeDOS, Windows 3.11 or older |Filesystems that have an ISO9660 backward c
 
 
 # 4K Drive Support
-Not all operating systems support 4K drives.  If you operating system supports UDF, but not your 4K drive, you still may encounter issues using this script.
+Not all operating systems support 4K drives ([Advanced Format](https://en.wikipedia.org/wiki/Advanced_Format)).  If you operating system supports UDF, but not your 4K drive, you still may encounter issues using this script.
 
 ### Windows 4K Drive Support
 The following tables detail Windows support for 4K drives.  Data was adapted from the [Microsoft support policy for 4K sector hard drives in Windows](https://support.microsoft.com/en-us/help/2510009/microsoft-support-policy-for-4k-sector-hard-drives-in-windows) (as retrieved on 2017-06-16).  Overlaid into this table are testing results from the format-udf community.  (Special thanks to [@pali](https://github.com/pali) for his [testing on XP](https://github.com/JElchison/format-udf/issues/13#issuecomment-302904564).)
