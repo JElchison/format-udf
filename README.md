@@ -295,7 +295,7 @@ For a human-readable device label, use format-udf in one of the following config
 
 ### Miscellaneous Tips
 
-* After installing GRUB2 on a partitionless drive, you can use `fdisk` to set the partition as active if your BIOS can't boot from partitionless drives. (Thanks to @tome- for the tip.)
+* After installing GRUB2 on a partitionless drive, you can use `fdisk` to set the partition as active if your BIOS can't boot from partitionless drives. (Thanks to [@tome-](https://github.com/tome-) for the tip.)
 
 
 # See Also
