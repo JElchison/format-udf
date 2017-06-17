@@ -14,7 +14,7 @@ Bash script to format a block device (hard drive or Flash drive) in UDF. The out
 * Option to force non-interactive mode (useful for scripting)
 * Writes a fake MBR for added compatibility on Windows (optionally disabled)
 
-For the advanced user, this script is also capable of formatting a single existing partition, without modifying the partition table.  Beware that using this method will render the newly formatted UDF partition unusable on macOS (but still usable on Linux and Windows).  (See [#24](https://github.com/JElchison/format-udf/issues/24) for caveats.)  Because of this limitation, the recommendation is to format the entire device.
+For the advanced user, format-udf is also capable of formatting a single existing partition, without modifying the partition table.  Beware that using this method will render the newly formatted UDF partition unusable on macOS (but still usable on Linux and Windows).  (See [#24](https://github.com/JElchison/format-udf/issues/24) for caveats.)  Because of this limitation, the recommendation is to format the entire device.
 
 
 # UDF OS Support
@@ -56,7 +56,7 @@ DOS, FreeDOS, Windows 3.11 or older |Filesystems that have an ISO9660 backward c
 
 
 # 4K Drive Support
-Not all operating systems support 4K drives ([Advanced Format](https://en.wikipedia.org/wiki/Advanced_Format)).  If you operating system supports UDF, but not your 4K drive, you still may encounter issues using this script.
+Not all operating systems support 4K drives ([Advanced Format](https://en.wikipedia.org/wiki/Advanced_Format)).  If you operating system supports UDF, but not your 4K drive, you still may encounter issues using format-udf.
 
 ### Windows 4K Drive Support
 The following tables detail Windows support for 4K drives.  Data was adapted from the [Microsoft support policy for 4K sector hard drives in Windows](https://support.microsoft.com/en-us/help/2510009/microsoft-support-policy-for-4k-sector-hard-drives-in-windows) (as retrieved on 2017-06-16).  Overlaid into this table are testing results from the format-udf community.  (Special thanks to [@pali](https://github.com/pali) for his [testing on XP](https://github.com/JElchison/format-udf/issues/13#issuecomment-302904564).)
@@ -253,7 +253,7 @@ HDD (USB)   | 512        | macOS 10.11  | Success except label, see [#11](https:
 
 ### Block Size
 
-If's extremely important that format-udf.sh use the correct block size when formatting your drive.  The script will attempt to detect and use the correct (logical) block size.  However, in rare cases, Linux can [lie](https://bugzilla.kernel.org/show_bug.cgi?id=102271) about the block size.  macOS is known to report the incorrect block size in certain scenarios as well.  In these cases, the format-udf `-b BLOCK_SIZE` option can be used to explicitly override the detected block size value.
+If's extremely important that format-udf.sh use the correct block size when formatting your drive.  format-udf will attempt to detect and use the correct (logical) block size.  However, in rare cases, Linux can [lie](https://bugzilla.kernel.org/show_bug.cgi?id=102271) about the block size.  macOS is known to report the incorrect block size in certain scenarios as well.  In these cases, the format-udf `-b BLOCK_SIZE` option can be used to explicitly override the detected block size value.
 
 If the wrong block size is used while formatting (i.e. one that doesn't match the logical block size of your drive), the resultant drive will likely have OS compatibility issues and suffer from non-optimal performance issues.
 
