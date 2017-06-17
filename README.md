@@ -25,7 +25,7 @@ Not all operating systems support UDF.  The following tables detail operating sy
 Both read/write are supported unless otherwise listed below.
 
 Operating System             |Read-only                                                                           |Note
-------------------- ---------|------------------------------------------------------------------------------------|--------------------------------------------------
+-----------------------------|------------------------------------------------------------------------------------|----
 Windows XP, Server 2003      |Read-only                                                                           |Write support available with third party utilities
 Windows Vista, 7, 8, 10      |                                                                                    |Referred to by Microsoft as "Live File System"; Requires fake full-disk partition
 Mac OS 9                     |                                                                                    |
