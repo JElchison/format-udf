@@ -404,6 +404,9 @@ TOOL_BLKID=$(which blkid 2>/dev/null) || true
 if [[ -x "$TOOL_BLKID" ]]; then
     TOOL_DRIVE_SUMMARY=$TOOL_BLKID
     echo " using $TOOL_DRIVE_SUMMARY"
+else
+    TOOL_DRIVE_SUMMARY=
+    echo " using (none)"
 fi
 
 
