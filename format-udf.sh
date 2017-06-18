@@ -462,7 +462,7 @@ fi
 echo "[+] Validating detected logical block size..."
 (echo "$LOGICAL_BLOCK_SIZE" | egrep -q '^[0-9]+$') || (echo "[-] Could not detect logical block size" >&2; false)
 [[ $LOGICAL_BLOCK_SIZE -gt 0 ]] || (echo "[-] Could not detect logical block size" >&2; false)
-[[ $((LOGICAL_BLOCK_SIZE % 512)) -ne 0 ]] || (echo "[-] Could not detect logical block size" >&2; false)
+[[ $((LOGICAL_BLOCK_SIZE % 512)) -eq 0 ]] || (echo "[-] Could not detect logical block size" >&2; false)
 
 echo "[*] Detected logical block size of $LOGICAL_BLOCK_SIZE"
 
@@ -485,7 +485,7 @@ fi
 echo "[+] Validating detected physical block size..."
 (echo "$PHYSICAL_BLOCK_SIZE" | egrep -q '^[0-9]+$') || (echo "[-] Could not detect physical block size" >&2; false)
 [[ $PHYSICAL_BLOCK_SIZE -gt 0 ]] || (echo "[-] Could not detect physical block size" >&2; false)
-[[ $((PHYSICAL_BLOCK_SIZE % 512)) -ne 0 ]] || (echo "[-] Could not detect physical block size" >&2; false)
+[[ $((PHYSICAL_BLOCK_SIZE % 512)) -eq 0 ]] || (echo "[-] Could not detect physical block size" >&2; false)
 
 echo "[*] Detected physical block size of $PHYSICAL_BLOCK_SIZE"
 
@@ -533,7 +533,7 @@ fi
 echo "[+] Validating file system block size..."
 (echo "$FILE_SYSTEM_BLOCK_SIZE" | egrep -q '^[0-9]+$') || (echo "[-] Invalid file system block size" >&2; false)
 [[ $FILE_SYSTEM_BLOCK_SIZE -gt 0 ]] || (echo "[-] Invalid file system block size" >&2; false)
-[[ $((FILE_SYSTEM_BLOCK_SIZE % 512)) -ne 0 ]] || (echo "[-] Invalid file system block size" >&2; false)
+[[ $((FILE_SYSTEM_BLOCK_SIZE % 512)) -eq 0 ]] || (echo "[-] Invalid file system block size" >&2; false)
 
 echo "[*] Using file system block size of $FILE_SYSTEM_BLOCK_SIZE"
 
