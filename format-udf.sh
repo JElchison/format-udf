@@ -458,13 +458,13 @@ else
     exit 1
 fi
 
+echo "[*] Detected logical block size of $LOGICAL_BLOCK_SIZE"
+
 # validate that $LOGICAL_BLOCK_SIZE is numeric > 0 and multiple of 512
 echo "[+] Validating detected logical block size..."
 (echo "$LOGICAL_BLOCK_SIZE" | egrep -q '^[0-9]+$') || (echo "[-] Could not detect logical block size" >&2; false)
 [[ $LOGICAL_BLOCK_SIZE -gt 0 ]] || (echo "[-] Could not detect logical block size" >&2; false)
 [[ $((LOGICAL_BLOCK_SIZE % 512)) -eq 0 ]] || (echo "[-] Could not detect logical block size" >&2; false)
-
-echo "[*] Detected logical block size of $LOGICAL_BLOCK_SIZE"
 
 
 ###############################################################################
@@ -481,13 +481,13 @@ else
     exit 1
 fi
 
+echo "[*] Detected physical block size of $PHYSICAL_BLOCK_SIZE"
+
 # validate that $PHYSICAL_BLOCK_SIZE is numeric > 0 and multiple of 512
 echo "[+] Validating detected physical block size..."
 (echo "$PHYSICAL_BLOCK_SIZE" | egrep -q '^[0-9]+$') || (echo "[-] Could not detect physical block size" >&2; false)
 [[ $PHYSICAL_BLOCK_SIZE -gt 0 ]] || (echo "[-] Could not detect physical block size" >&2; false)
 [[ $((PHYSICAL_BLOCK_SIZE % 512)) -eq 0 ]] || (echo "[-] Could not detect physical block size" >&2; false)
-
-echo "[*] Detected physical block size of $PHYSICAL_BLOCK_SIZE"
 
 
 ###############################################################################
@@ -552,12 +552,12 @@ else
     exit 1
 fi
 
+echo "[*] Detected total size of $TOTAL_SIZE"
+
 # validate that $TOTAL_SIZE is numeric > 0
 echo "[+] Validating detected total size..."
 (echo "$TOTAL_SIZE" | egrep -q '^[0-9]+$') || (echo "[-] Could not detect valid total size" >&2; false)
 [[ $TOTAL_SIZE -gt 0 ]] || (echo "[-] Could not detect valid total size" >&2; false)
-
-echo "[*] Detected total size of $TOTAL_SIZE"
 
 # verify entire drive capacity can be used
 if [[ $((TOTAL_SIZE/LOGICAL_BLOCK_SIZE)) -ge $(((2**32)-1)) ]]; then
