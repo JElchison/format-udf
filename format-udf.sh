@@ -35,8 +35,6 @@ set -euf -o pipefail
 HPC=255
 # maximum number of sectors per track
 SPT=63
-# reset in case getopts has been used previously in the shell
-OPTIND=1
 
 
 ###############################################################################
@@ -54,7 +52,7 @@ Usage:  $0 [-b BLOCK_SIZE] [-f] [-p PARTITION_TYPE] [-w WIPE_METHOD] device labe
 
     -b BLOCK_SIZE
         Block size to be used during format operation.
-        If absent, defaults to value reported by blockdev/diskutil.
+        If absent, defaults to value reported by blockdev/ioreg.
         This is useful in light of the following Linux kernel bug:
             https://bugzilla.kernel.org/show_bug.cgi?id=102271
 
@@ -129,9 +127,9 @@ function ntohl {
 
 
 # Prints hex representation of entire-disk partition entry.  Reference:
-# https://en.wikipedia.org/wiki/Master_boot_record
-# https://en.wikipedia.org/wiki/Cylinder-head-sector
-# https://en.wikipedia.org/wiki/Logical_block_addressing
+#   https://en.wikipedia.org/wiki/Master_boot_record
+#   https://en.wikipedia.org/wiki/Cylinder-head-sector
+#   https://en.wikipedia.org/wiki/Logical_block_addressing
 # Arguments:
 #   Device
 # Returns:
@@ -202,9 +200,27 @@ if [[ ! -x $(which cat 2>/dev/null) ]] ||
    [[ ! -x $(which tr 2>/dev/null) ]] ||
    [[ ! -x $(which dd 2>/dev/null) ]] ||
    [[ ! -x $(which xxd 2>/dev/null) ]]; then
-    echo "[-] Dependencies unmet.  Please verify that the following are installed, executable, and in the PATH:  cat, grep, egrep, mount, test, true, false, awk, printf, sed, dd, xxd" >&2
+    echo "[-] Dependencies unmet.  Please verify that the following are installed, executable, and in the PATH:  cat, grep, egrep, mount, test, true, false, awk, printf, sed, tr, dd, xxd" >&2
     exit 1
 fi
+
+
+# ensure have required drive info tool
+echo -n "[+] Looking for drive info tool..."
+# `true` is so that a failure here doesn't cause entire script to exit prematurely
+TOOL_BLOCKDEV=$(which blockdev 2>/dev/null) || true
+# `true` is so that a failure here doesn't cause entire script to exit prematurely
+TOOL_IOREG=$(which ioreg 2>/dev/null) || true
+if [[ -x "$TOOL_BLOCKDEV" ]]; then
+    TOOL_DRIVE_INFO=$TOOL_BLOCKDEV
+elif [[ -x "$TOOL_IOREG" ]]; then
+    TOOL_DRIVE_INFO=$TOOL_IOREG
+else
+    echo
+    echo "[-] Dependencies unmet.  Please verify that at least one of the following are installed, executable, and in the PATH:  blockdev, ioreg" >&2
+    exit 1
+fi
+echo " using $TOOL_DRIVE_INFO"
 
 
 # ensure have required drive listing tool
@@ -225,11 +241,22 @@ fi
 echo " using $TOOL_DRIVE_LISTING"
 
 
+# ensure have required drive summary tool
+echo -n "[+] Looking for drive summary tool..."
+# `true` is so that a failure here doesn't cause entire script to exit prematurely
+TOOL_BLKID=$(which blkid 2>/dev/null) || true
+if [[ -x "$TOOL_BLOCKDEV" ]]; then
+    TOOL_DRIVE_SUMMARY=$TOOL_BLOCKDEV
+    echo " using $TOOL_DRIVE_SUMMARY"
+fi
+
+
 # ensure have required unmount tool
 echo -n "[+] Looking for unmount tool..."
 # `true` is so that a failure here doesn't cause entire script to exit prematurely
 TOOL_UMOUNT=$(which umount 2>/dev/null) || true
-# NOTE: 'TOOL_DISKUTIL' has already been set above.  no need to set it again here.
+# `true` is so that a failure here doesn't cause entire script to exit prematurely
+TOOL_DISKUTIL=$(which diskutil 2>/dev/null) || true
 # prefer 'diskutil' if available, as it's required on macOS (even if 'umount' is present)
 if [[ -x "$TOOL_DISKUTIL" ]]; then
     TOOL_UNMOUNT=$TOOL_DISKUTIL
@@ -269,6 +296,9 @@ ARG_BLOCK_SIZE=
 FORCE=
 PARTITION_TYPE=mbr
 WIPE_METHOD=quick
+
+# reset in case getopts has been used previously in the shell
+OPTIND=1
 
 
 ###############################################################################
@@ -356,7 +386,7 @@ LABEL=$2
 mount "/dev/$DEVICE" 2>/dev/null || true
 [[ -b "/dev/$DEVICE" ]] || (echo "[-] /dev/$DEVICE either doesn't exist or is not block special" >&2; false)
 
-# provide assuring exit message
+# provide assuring exit message when exiting before making changes to the drive
 trap exit_with_no_changes EXIT
 
 
@@ -380,11 +410,25 @@ fi
 [[ -b /dev/$PARENT_DEVICE ]] || (echo "[-] /dev/$PARENT_DEVICE either doesn't exist or is not block special" >&2; false)
 
 # validate configuration
-if [[ "$PARENT_DEVICE" != "$DEVICE" ]] && [[ "$PARTITION_TYPE" != "none" ]]; then
-    echo "[-] You are attempting to format a single partition (as opposed to entire device)." >&2
-    echo "[-] Partition type '$PARTITION_TYPE' incompatible with single partition formatting." >&2
-    echo "[-] Please specify an entire device or partition type of 'none'." >&2
-    exit 1
+if [[ "$PARENT_DEVICE" != "$DEVICE" ]]; then
+    if [[ "$PARTITION_TYPE" != "none" ]]; then
+        echo "[-] You are attempting to format a single partition (as opposed to entire device)." >&2
+        echo "[-] Partition type '$PARTITION_TYPE' incompatible with single partition formatting." >&2
+        echo "[-] Please specify an entire device or partition type of 'none'." >&2
+        exit 1
+    fi
+
+    echo "You are attempting to format a single partition (as opposed to entire device)."
+    echo "For maximal compatibility, the recommendation is to format the entire device."
+    echo "If you continue, the resultant UDF partition will not be recognized on macOS."
+    
+    if [[ -z $FORCE ]]; then
+        read -p "Type 'yes' if you would like to continue anyway:  " YES_CASE
+        YES=$(echo "$YES_CASE" | tr '[:upper:]' '[:lower:]')
+        if [[ $YES != "yes" ]]; then
+            exit 1
+        fi
+    fi
 fi
 
 
@@ -393,19 +437,20 @@ fi
 ###############################################################################
 
 echo "[+] Detecting logical block size..."
-if [[ $TOOL_DRIVE_LISTING = "$TOOL_BLOCKDEV" ]]; then
+if [[ $TOOL_DRIVE_INFO = "$TOOL_BLOCKDEV" ]]; then
     LOGICAL_BLOCK_SIZE=$(sudo blockdev --getss "/dev/$DEVICE")
-elif [[ -x $TOOL_DISKUTIL ]]; then
-    LOGICAL_BLOCK_SIZE=$(ioreg -c IOMedia -r -d 1 | tr '\n' '\0' | egrep -ao "\{$[^\+]*$DEVICE.*?\}$" | tr '\0' '\n' | grep 'Physical Block Size' | awk '{print $5}')
+elif [[ $TOOL_DRIVE_INFO = "$TOOL_IOREG" ]]; then
+    LOGICAL_BLOCK_SIZE=$(ioreg -c IOMedia -r -d 1 | tr '\n' '\0' | egrep -ao "\{\$[^\+]*$DEVICE.*?\}\$" | tr '\0' '\n' | grep 'Logical Block Size' | awk '{print $5}')
 else
     echo "[-] Cannot detect logical block size" >&2
     exit 1
 fi
 
-# validate that $LOGICAL_BLOCK_SIZE is numeric > 0
+# validate that $LOGICAL_BLOCK_SIZE is numeric > 0 and multiple of 512
 echo "[+] Validating detected logical block size..."
 (echo "$LOGICAL_BLOCK_SIZE" | egrep -q '^[0-9]+$') || (echo "[-] Could not detect logical block size" >&2; false)
 [[ $LOGICAL_BLOCK_SIZE -gt 0 ]] || (echo "[-] Could not detect logical block size" >&2; false)
+[[ $((LOGICAL_BLOCK_SIZE % 512)) -ne 0 ]] || (echo "[-] Could not detect logical block size" >&2; false)
 
 echo "[*] Detected logical block size of $LOGICAL_BLOCK_SIZE"
 
@@ -415,63 +460,42 @@ echo "[*] Detected logical block size of $LOGICAL_BLOCK_SIZE"
 ###############################################################################
 
 echo "[+] Detecting physical block size..."
-if [[ $TOOL_DRIVE_LISTING = "$TOOL_BLOCKDEV" ]]; then
+if [[ $TOOL_DRIVE_INFO = "$TOOL_BLOCKDEV" ]]; then
     PHYSICAL_BLOCK_SIZE=$(sudo blockdev --getpbsz "/dev/$DEVICE")
-elif [[ -x $TOOL_DISKUTIL ]]; then
-    PHYSICAL_BLOCK_SIZE=$(ioreg -c IOMedia -r -d 1 | tr '\n' '\0' | egrep -ao "\{$[^\+]*$DEVICE.*?\}$" | tr '\0' '\n' | grep 'Logical Block Size' | awk '{print $5}')
+elif [[ $TOOL_DRIVE_INFO = "$TOOL_IOREG" ]]; then
+    PHYSICAL_BLOCK_SIZE=$(ioreg -c IOMedia -r -d 1 | tr '\n' '\0' | egrep -ao "\{\$[^\+]*$DEVICE.*?\}\$" | tr '\0' '\n' | grep 'Physical Block Size' | awk '{print $5}')
 else
     echo "[-] Cannot detect physical block size" >&2
     exit 1
 fi
 
-# validate that $PHYSICAL_BLOCK_SIZE is numeric > 0
+# validate that $PHYSICAL_BLOCK_SIZE is numeric > 0 and multiple of 512
 echo "[+] Validating detected physical block size..."
 (echo "$PHYSICAL_BLOCK_SIZE" | egrep -q '^[0-9]+$') || (echo "[-] Could not detect physical block size" >&2; false)
 [[ $PHYSICAL_BLOCK_SIZE -gt 0 ]] || (echo "[-] Could not detect physical block size" >&2; false)
+[[ $((PHYSICAL_BLOCK_SIZE % 512)) -ne 0 ]] || (echo "[-] Could not detect physical block size" >&2; false)
 
 echo "[*] Detected physical block size of $PHYSICAL_BLOCK_SIZE"
-
-
-###############################################################################
-# gather information - total size
-###############################################################################
-
-echo "[+] Detecting total size..."
-if [[ $TOOL_DRIVE_LISTING = "$TOOL_BLOCKDEV" ]]; then
-    TOTAL_SIZE=$(sudo blockdev --getsize64 "/dev/$DEVICE")
-elif [[ -x $TOOL_DISKUTIL ]]; then
-    TOTAL_SIZE=$(diskutil info "$DEVICE" | egrep -i '(Total|Disk) Size' | awk -F ':' '{print $2}' | egrep -oi '\([0-9]+ B' | sed 's/[^0-9]//g')
-else
-    echo "[-] Cannot detect total size" >&2
-    exit 1
-fi
-
-# validate that $TOTAL_SIZE is numeric > 0
-echo "[+] Validating detected total size..."
-(echo "$TOTAL_SIZE" | egrep -q '^[0-9]+$') || (echo "[-] Could not detect valid total size" >&2; false)
-[[ $TOTAL_SIZE -gt 0 ]] || (echo "[-] Could not detect valid total size" >&2; false)
-
-echo "[*] Detected total size of $TOTAL_SIZE"
 
 
 ###############################################################################
 # check for Advanced Format drive
 ###############################################################################
 
-if [[ -z $FORCE ]]; then
-    if [[ $LOGICAL_BLOCK_SIZE -ne 512 -o $PHYSICAL_BLOCK_SIZE -ne 512 ]]; then
-        echo "The device you have selected is an Advanced Format drive, with a logical block size"
-        echo "of $LOGICAL_BLOCK_SIZE bytes and physical block size of $PHYSICAL_BLOCK_SIZE bytes."
-        if [[ $LOGICAL_BLOCK_SIZE -eq 512 -a $PHYSICAL_BLOCK_SIZE -eq 4096 ]]; then
-            echo "This device is an '512 emulation' (512e) drive."
-        elif [[ $LOGICAL_BLOCK_SIZE -eq 4096 -a $PHYSICAL_BLOCK_SIZE -eq 4096 ]]; then 
-            echo "This device is an '4K native' (4Kn) drive."
-        fi
-        echo "As such, this drive will not be as compatible across operating systems as a standard"
-        echo "drive having a logical block size of 512 bytes and a physical block size of 512 bytes."
-        echo "For example, this drive will not be usable for read or write on Windows XP."
-        echo "Please see the format-udf README for more information."
-        
+if [[ $LOGICAL_BLOCK_SIZE -ne 512 ]] || [[ $PHYSICAL_BLOCK_SIZE -ne 512 ]]; then
+    echo "The device you have selected is an Advanced Format drive, with a logical block size"
+    echo "of $LOGICAL_BLOCK_SIZE bytes and physical block size of $PHYSICAL_BLOCK_SIZE bytes."
+    if [[ $LOGICAL_BLOCK_SIZE -eq 512 ]] && [[ $PHYSICAL_BLOCK_SIZE -eq 4096 ]]; then
+        echo "This device is an '512 emulation' (512e) drive."
+    elif [[ $LOGICAL_BLOCK_SIZE -eq 4096 ]] && [[ $PHYSICAL_BLOCK_SIZE -eq 4096 ]]; then 
+        echo "This device is an '4K native' (4Kn) drive."
+    fi
+    echo "As such, this drive will not be as compatible across operating systems as a standard"
+    echo "drive having a logical block size of 512 bytes and a physical block size of 512 bytes."
+    echo "For example, this drive will not be usable for read or write on Windows XP."
+    echo "Please see the format-udf README for more information/limitations."
+    
+    if [[ -z $FORCE ]]; then
         read -p "Type 'yes' if you would like to continue anyway:  " YES_CASE
         YES=$(echo "$YES_CASE" | tr '[:upper:]' '[:lower:]')
         if [[ $YES != "yes" ]]; then
@@ -489,30 +513,49 @@ if [[ -z $ARG_BLOCK_SIZE ]]; then
     # Windows requires that the file system have a block size that matches logical block size
     FILE_SYSTEM_BLOCK_SIZE=$LOGICAL_BLOCK_SIZE
 else
-    echo "[+] Overriding logical block size..."
+    echo "[+] Overriding detected logical block size..."
     FILE_SYSTEM_BLOCK_SIZE=$ARG_BLOCK_SIZE
 fi
 
-# validate that $FILE_SYSTEM_BLOCK_SIZE is numeric > 0
+# validate that $FILE_SYSTEM_BLOCK_SIZE is numeric > 0 and multiple of 512
 echo "[+] Validating file system block size..."
 (echo "$FILE_SYSTEM_BLOCK_SIZE" | egrep -q '^[0-9]+$') || (echo "[-] Invalid file system block size" >&2; false)
 [[ $FILE_SYSTEM_BLOCK_SIZE -gt 0 ]] || (echo "[-] Invalid file system block size" >&2; false)
+[[ $((FILE_SYSTEM_BLOCK_SIZE % 512)) -ne 0 ]] || (echo "[-] Invalid file system block size" >&2; false)
 
 echo "[*] Using file system block size of $FILE_SYSTEM_BLOCK_SIZE"
 
 
 ###############################################################################
-# check for maximum capacity usage
+# gather information - total size
 ###############################################################################
 
-if [[ -z $FORCE ]]; then
-    if [[ $((TOTAL_SIZE/LOGICAL_BLOCK_SIZE)) -ge $(((2**32)-1)) ]]; then
-        echo "The device you have selected is larger than can be fully utilized by UDF."
-        echo "Only the first 2^32 logical blocks on the device will be usable on the resultant UDF drive,"
-        echo "and the remainder of the drive will not be used."
-        echo "The maximum UDF file system capacity on this device is $((LOGICAL_BLOCK_SIZE/256)) TiB."
-        echo "Please see the format-udf README for more information."
-        
+echo "[+] Detecting total size..."
+if [[ $TOOL_DRIVE_LISTING = "$TOOL_BLOCKDEV" ]]; then
+    TOTAL_SIZE=$(sudo blockdev --getsize64 "/dev/$DEVICE")
+elif [[ $TOOL_DRIVE_LISTING = "$TOOL_DISKUTIL" ]]; then
+    TOTAL_SIZE=$(diskutil info "$DEVICE" | egrep -i '(Total|Disk) Size' | awk -F ':' '{print $2}' | egrep -oi '\([0-9]+ B' | sed 's/[^0-9]//g')
+else
+    echo "[-] Cannot detect total size" >&2
+    exit 1
+fi
+
+# validate that $TOTAL_SIZE is numeric > 0
+echo "[+] Validating detected total size..."
+(echo "$TOTAL_SIZE" | egrep -q '^[0-9]+$') || (echo "[-] Could not detect valid total size" >&2; false)
+[[ $TOTAL_SIZE -gt 0 ]] || (echo "[-] Could not detect valid total size" >&2; false)
+
+echo "[*] Detected total size of $TOTAL_SIZE"
+
+# verify entire drive capacity can be used
+if [[ $((TOTAL_SIZE/LOGICAL_BLOCK_SIZE)) -ge $(((2**32)-1)) ]]; then
+    echo "The device you have selected is larger than can be fully utilized by UDF."
+    echo "Only the first 2^32 logical blocks on the device will be usable on the resultant UDF drive,"
+    echo "and the remainder of the drive will not be used."
+    echo "The maximum UDF file system capacity on this device is $((LOGICAL_BLOCK_SIZE/256)) TiB."
+    echo "Please see the format-udf README for more information."
+    
+    if [[ -z $FORCE ]]; then
         read -p "Type 'yes' if you would like to continue anyway:  " YES_CASE
         YES=$(echo "$YES_CASE" | tr '[:upper:]' '[:lower:]')
         if [[ $YES != "yes" ]]; then
@@ -523,11 +566,11 @@ fi
 
 
 ###############################################################################
-# print drive information
+# user's last chance before the drive is modified
 ###############################################################################
 
 echo "[+] Gathering drive information..."
-if [[ $TOOL_DRIVE_LISTING = "$TOOL_BLOCKDEV" ]]; then
+if [[ $TOOL_DRIVE_SUMMARY = "$TOOL_BLKID" ]] && [[ $TOOL_DRIVE_LISTING = "$TOOL_BLOCKDEV" ]]; then
     sudo blkid -c /dev/null "/dev/$DEVICE" || true
     cat "/sys/block/$PARENT_DEVICE/device/model"
     sudo blockdev --report | egrep "(Device|$DEVICE)"
@@ -538,25 +581,9 @@ else
     exit 1
 fi
 
-
-###############################################################################
-# verify with user
-###############################################################################
-
 if [[ -z $FORCE ]]; then
-    if [[ "$PARENT_DEVICE" != "$DEVICE" ]]; then
-        echo "You are attempting to format a single partition (as opposed to entire device)."
-        echo "For maximal compatibility, the recommendation is to format the entire device."
-        echo "If you continue, the resultant UDF partition will not be recognized on macOS."
-        read -p "Type 'yes' if this is what you intend:  " YES_CASE
-        YES=$(echo "$YES_CASE" | tr '[:upper:]' '[:lower:]')
-        if [[ $YES != "yes" ]]; then
-            exit 1
-        fi
-    fi
-
-    # give the user a chance to realize his/her mistake
     echo "The above-listed device (and partitions, if any) will be completely erased."
+    
     read -p "Type 'yes' if this is what you intend:  " YES_CASE
     YES=$(echo "$YES_CASE" | tr '[:upper:]' '[:lower:]')
     if [[ $YES != "yes" ]]; then
@@ -672,7 +699,7 @@ esac
 
 # following call to blkid sometimes exits with failure, even though the device is formatted properly.
 # `true` is so that a failure here doesn't cause entire script to exit prematurely
-SUMMARY=$([[ -x $(which blkid 2>/dev/null) ]] && sudo blkid -c /dev/null "/dev/$DEVICE" 2>/dev/null) || true
+SUMMARY=$([[ $TOOL_DRIVE_SUMMARY = "$TOOL_BLKID" ]] && sudo blkid -c /dev/null "/dev/$DEVICE" 2>/dev/null) || true
 echo "[+] Successfully formatted $SUMMARY"
 
 # TODO find a way to auto-mount (`sudo mount -a` doesn't work).  in the meantime...

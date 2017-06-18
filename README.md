@@ -95,6 +95,7 @@ If you have conducted testing and would like to update this table to benefit fut
 * The following tools must be installed, executable, and in the PATH:
     * `printf`
     * `xxd`
+    * *One* of the following:  `blockdev`, `ioreg`
     * *One* of the following:  `blockdev`, `diskutil`
     * *One* of the following:  `umount`, `diskutil`
     * *One* of the following:  `mkudffs`, `newfs_udf`
