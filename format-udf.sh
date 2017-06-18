@@ -460,12 +460,22 @@ echo "[*] Detected total size of $TOTAL_SIZE"
 
 if [[ -z $FORCE ]]; then
     if [[ $LOGICAL_BLOCK_SIZE -ne 512 -o $PHYSICAL_BLOCK_SIZE -ne 512 ]]; then
+        echo "The device you have selected is an Advanced Format drive, with a logical block size"
+        echo "of $LOGICAL_BLOCK_SIZE bytes and physical block size of $PHYSICAL_BLOCK_SIZE bytes."
         if [[ $LOGICAL_BLOCK_SIZE -eq 512 -a $PHYSICAL_BLOCK_SIZE -eq 4096 ]]; then
-            # TODO    
+            echo "This device is an '512 emulation' (512e) drive."
         elif [[ $LOGICAL_BLOCK_SIZE -eq 4096 -a $PHYSICAL_BLOCK_SIZE -eq 4096 ]]; then 
-            # TODO    
-        else
-            # TODO    
+            echo "This device is an '4K native' (4Kn) drive."
+        fi
+        echo "As such, this drive will not be as compatible across operating systems as a standard"
+        echo "drive having a logical block size of 512 bytes and a physical block size of 512 bytes."
+        echo "For example, this drive will not be usable for read or write on Windows XP."
+        echo "Please see the format-udf README for more information."
+        
+        read -p "Type 'yes' if you would like to continue anyway:  " YES_CASE
+        YES=$(echo "$YES_CASE" | tr '[:upper:]' '[:lower:]')
+        if [[ $YES != "yes" ]]; then
+            exit 1
         fi
     fi
 fi
@@ -489,6 +499,27 @@ echo "[+] Validating file system block size..."
 [[ $FILE_SYSTEM_BLOCK_SIZE -gt 0 ]] || (echo "[-] Invalid file system block size" >&2; false)
 
 echo "[*] Using file system block size of $FILE_SYSTEM_BLOCK_SIZE"
+
+
+###############################################################################
+# check for maximum capacity usage
+###############################################################################
+
+if [[ -z $FORCE ]]; then
+    if [[ $((TOTAL_SIZE/LOGICAL_BLOCK_SIZE)) -ge $(((2**32)-1)) ]]; then
+        echo "The device you have selected is larger than can be fully utilized by UDF."
+        echo "Only the first 2^32 logical blocks on the device will be usable on the resultant UDF drive,"
+        echo "and the remainder of the drive will not be used."
+        echo "The maximum UDF file system capacity on this device is $((LOGICAL_BLOCK_SIZE/256)) TiB."
+        echo "Please see the format-udf README for more information."
+        
+        read -p "Type 'yes' if you would like to continue anyway:  " YES_CASE
+        YES=$(echo "$YES_CASE" | tr '[:upper:]' '[:lower:]')
+        if [[ $YES != "yes" ]]; then
+            exit 1
+        fi
+    fi
+fi
 
 
 ###############################################################################
