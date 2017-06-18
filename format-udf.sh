@@ -53,7 +53,9 @@ The output is a drive that can be used for reading/writing across multiple
 operating system families: Windows, macOS, and Linux.
 This script should be capable of running in macOS or in Linux.
 
-Usage:  $0 [-b BLOCK_SIZE] [-f] [-p PARTITION_TYPE] [-v] [-w WIPE_METHOD] device label
+Usage:  $0 [-b BLOCK_SIZE] [-f] [-p PARTITION_TYPE] [-w WIPE_METHOD] device label
+        $0 -v
+        $0 -h
 
     -b BLOCK_SIZE
         Block size to be used during format operation.
@@ -64,6 +66,9 @@ Usage:  $0 [-b BLOCK_SIZE] [-f] [-p PARTITION_TYPE] [-v] [-w WIPE_METHOD] device
     -f
         Forces non-interactive mode.  Useful for scripting.
         Please use with caution, as no user confirmation is given.
+
+    -h
+        Display help information and exit.
 
     -p PARTITION_TYPE
         Partition type to set during format operation.
