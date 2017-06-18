@@ -102,7 +102,7 @@ Usage:  $0 [-b BLOCK_SIZE] [-f] [-p PARTITION_TYPE] [-w WIPE_METHOD] device labe
     label
         Label to apply to formatted device.
 
-Example:  $0 sdg "My External UDF Drive"
+Example:  $0 sdg "My UDF External Drive"
 EOF
 }
 
