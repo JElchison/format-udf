@@ -452,7 +452,7 @@ echo "[+] Detecting logical block size..."
 if [[ $TOOL_DRIVE_INFO = "$TOOL_BLOCKDEV" ]]; then
     LOGICAL_BLOCK_SIZE=$(sudo blockdev --getss "/dev/$DEVICE")
 elif [[ $TOOL_DRIVE_INFO = "$TOOL_IOREG" ]]; then
-    LOGICAL_BLOCK_SIZE=$(ioreg -c IOMedia -r -d 1 | tr '\n' '\0' | egrep -ao "\{\$[^\+]*$DEVICE.*?\}\$" | tr '\0' '\n' | grep 'Logical Block Size' | awk '{print $5}')
+    LOGICAL_BLOCK_SIZE=$(ioreg -c IOMedia -r -d 1 | tr '\n' '\0' | egrep -ao "\{\$[^\+]*$DEVICE.*?    \}\$" | tr '\0' '\n' | grep 'Logical Block Size' | awk '{print $5}')
 else
     echo "[-] Cannot detect logical block size" >&2
     exit 1
@@ -475,7 +475,7 @@ echo "[+] Detecting physical block size..."
 if [[ $TOOL_DRIVE_INFO = "$TOOL_BLOCKDEV" ]]; then
     PHYSICAL_BLOCK_SIZE=$(sudo blockdev --getpbsz "/dev/$DEVICE")
 elif [[ $TOOL_DRIVE_INFO = "$TOOL_IOREG" ]]; then
-    PHYSICAL_BLOCK_SIZE=$(ioreg -c IOMedia -r -d 1 | tr '\n' '\0' | egrep -ao "\{\$[^\+]*$DEVICE.*?\}\$" | tr '\0' '\n' | grep 'Physical Block Size' | awk '{print $5}')
+    PHYSICAL_BLOCK_SIZE=$(ioreg -c IOMedia -r -d 1 | tr '\n' '\0' | egrep -ao "\{\$[^\+]*$DEVICE.*?    \}\$" | tr '\0' '\n' | grep 'Physical Block Size' | awk '{print $5}')
 else
     echo "[-] Cannot detect physical block size" >&2
     exit 1
