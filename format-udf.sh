@@ -59,7 +59,7 @@ Usage:  $0 [-b BLOCK_SIZE] [-f] [-p PARTITION_TYPE] [-w WIPE_METHOD] device labe
 
     -b BLOCK_SIZE
         Block size to be used during format operation.
-        If absent, defaults to value reported by blockdev/ioreg.
+        If absent, defaults to value reported by blockdev/diskutil.
         This is useful in light of the following Linux kernel bug:
             https://bugzilla.kernel.org/show_bug.cgi?id=102271
 
@@ -102,7 +102,7 @@ Usage:  $0 [-b BLOCK_SIZE] [-f] [-p PARTITION_TYPE] [-w WIPE_METHOD] device labe
     label
         Label to apply to formatted device.
 
-Example:  $0 sdg "My External Drive"
+Example:  $0 sdg "My External UDF Drive"
 EOF
 }
 
