@@ -452,9 +452,9 @@ echo "[+] Detecting logical block size..."
 if [[ $TOOL_DRIVE_INFO = "$TOOL_BLOCKDEV" ]]; then
     LOGICAL_BLOCK_SIZE=$(sudo blockdev --getss "/dev/$DEVICE")
 elif [[ $TOOL_DRIVE_INFO = "$TOOL_IOREG" ]]; then
-    LOGICAL_BLOCK_SIZE=$(ioreg -c IOMedia -r -d 1 | tr '\n' '\0' | egrep -ao "\{\$[^\+]*$DEVICE.*?    \}\$" | tr '\0' '\n' | grep 'Logical Block Size' | awk '{print $5}')
+    LOGICAL_BLOCK_SIZE=$(diskutil info "$DEVICE" | grep -i 'Device Block Size' | awk -F ':' '{print $2}' | awk '{print $1}')
 else
-    echo "[-] Cannot detect logical block size" >&2
+    echo "[-] Internal error 1" >&2
     exit 1
 fi
 
@@ -475,43 +475,46 @@ echo "[+] Detecting physical block size..."
 if [[ $TOOL_DRIVE_INFO = "$TOOL_BLOCKDEV" ]]; then
     PHYSICAL_BLOCK_SIZE=$(sudo blockdev --getpbsz "/dev/$DEVICE")
 elif [[ $TOOL_DRIVE_INFO = "$TOOL_IOREG" ]]; then
+    # TODO - the 'Physical Block Size' item isn't always present.  find a more reliable method on macOS.
     PHYSICAL_BLOCK_SIZE=$(ioreg -c IOMedia -r -d 1 | tr '\n' '\0' | egrep -ao "\{\$[^\+]*$DEVICE.*?    \}\$" | tr '\0' '\n' | grep 'Physical Block Size' | awk '{print $5}')
 else
-    echo "[-] Cannot detect physical block size" >&2
+    echo "[-] Internal error 2" >&2
     exit 1
 fi
 
-echo "[*] Detected physical block size of $PHYSICAL_BLOCK_SIZE"
+if [[ -n $PHYSICAL_BLOCK_SIZE ]]; then
+    echo "[*] Detected physical block size of $PHYSICAL_BLOCK_SIZE"
 
-# validate that $PHYSICAL_BLOCK_SIZE is numeric > 0 and multiple of 512
-echo "[+] Validating detected physical block size..."
-(echo "$PHYSICAL_BLOCK_SIZE" | egrep -q '^[0-9]+$') || (echo "[-] Could not detect physical block size" >&2; false)
-[[ $PHYSICAL_BLOCK_SIZE -gt 0 ]] || (echo "[-] Could not detect physical block size" >&2; false)
-[[ $((PHYSICAL_BLOCK_SIZE % 512)) -eq 0 ]] || (echo "[-] Could not detect physical block size" >&2; false)
+    # validate that $PHYSICAL_BLOCK_SIZE is numeric > 0 and multiple of 512
+    echo "[+] Validating detected physical block size..."
+    (echo "$PHYSICAL_BLOCK_SIZE" | egrep -q '^[0-9]+$') || (echo "[-] Could not detect physical block size" >&2; false)
+    [[ $PHYSICAL_BLOCK_SIZE -gt 0 ]] || (echo "[-] Could not detect physical block size" >&2; false)
+    [[ $((PHYSICAL_BLOCK_SIZE % 512)) -eq 0 ]] || (echo "[-] Could not detect physical block size" >&2; false)
 
 
-###############################################################################
-# check for Advanced Format drive
-###############################################################################
+    ###############################################################################
+    # check for Advanced Format drive
+    ###############################################################################
 
-if [[ $LOGICAL_BLOCK_SIZE -ne 512 ]] || [[ $PHYSICAL_BLOCK_SIZE -ne 512 ]]; then
-    echo "The device you have selected is an Advanced Format drive, with a logical block size"
-    echo "of $LOGICAL_BLOCK_SIZE bytes and physical block size of $PHYSICAL_BLOCK_SIZE bytes."
-    if [[ $LOGICAL_BLOCK_SIZE -eq 512 ]] && [[ $PHYSICAL_BLOCK_SIZE -eq 4096 ]]; then
-        echo "This device is an '512 emulation' (512e) drive."
-    elif [[ $LOGICAL_BLOCK_SIZE -eq 4096 ]] && [[ $PHYSICAL_BLOCK_SIZE -eq 4096 ]]; then 
-        echo "This device is an '4K native' (4Kn) drive."
-    fi
-    echo "As such, this drive will not be as compatible across operating systems as a standard"
-    echo "drive having a logical block size of 512 bytes and a physical block size of 512 bytes."
-    echo "For example, this drive will not be usable for read or write on Windows XP."
-    echo "Please see the format-udf README for more information/limitations."
-    
-    if [[ -z $FORCE ]]; then
-        read -p "Type 'yes' if you would like to continue anyway:  " YES_CASE
-        YES=$(echo "$YES_CASE" | tr '[:upper:]' '[:lower:]')
-        if [[ $YES != "yes" ]]; then
-            exit 1
+    if [[ $LOGICAL_BLOCK_SIZE -ne 512 ]] || [[ $PHYSICAL_BLOCK_SIZE -ne 512 ]]; then
+        echo "The device you have selected is an Advanced Format drive, with a logical block size"
+        echo "of $LOGICAL_BLOCK_SIZE bytes and physical block size of $PHYSICAL_BLOCK_SIZE bytes."
+        if [[ $LOGICAL_BLOCK_SIZE -eq 512 ]] && [[ $PHYSICAL_BLOCK_SIZE -eq 4096 ]]; then
+            echo "This device is an '512 emulation' (512e) drive."
+        elif [[ $LOGICAL_BLOCK_SIZE -eq 4096 ]] && [[ $PHYSICAL_BLOCK_SIZE -eq 4096 ]]; then 
+            echo "This device is an '4K native' (4Kn) drive."
+        fi
+        echo "As such, this drive will not be as compatible across operating systems as a standard"
+        echo "drive having a logical block size of 512 bytes and a physical block size of 512 bytes."
+        echo "For example, this drive will not be usable for read or write on Windows XP."
+        echo "Please see the format-udf README for more information/limitations."
+        
+        if [[ -z $FORCE ]]; then
+            read -p "Type 'yes' if you would like to continue anyway:  " YES_CASE
+            YES=$(echo "$YES_CASE" | tr '[:upper:]' '[:lower:]')
+            if [[ $YES != "yes" ]]; then
+                exit 1
+            fi
         fi
     fi
 fi
@@ -548,7 +551,7 @@ if [[ $TOOL_DRIVE_LISTING = "$TOOL_BLOCKDEV" ]]; then
 elif [[ $TOOL_DRIVE_LISTING = "$TOOL_DISKUTIL" ]]; then
     TOTAL_SIZE=$(diskutil info "$DEVICE" | egrep -i '(Total|Disk) Size' | awk -F ':' '{print $2}' | egrep -oi '\([0-9]+ B' | sed 's/[^0-9]//g')
 else
-    echo "[-] Cannot detect total size" >&2
+    echo "[-] Internal error 3" >&2
     exit 1
 fi
 
@@ -589,7 +592,7 @@ if [[ $TOOL_DRIVE_SUMMARY = "$TOOL_BLKID" ]] && [[ $TOOL_DRIVE_LISTING = "$TOOL_
 elif [[ $TOOL_DRIVE_LISTING = "$TOOL_DISKUTIL" ]]; then
     diskutil list "$DEVICE"
 else
-    echo "[-] Internal error 1" >&2
+    echo "[-] Internal error 4" >&2
     exit 1
 fi
 
@@ -616,7 +619,7 @@ elif [[ $TOOL_UNMOUNT = "$TOOL_DISKUTIL" ]]; then
     # `true` is so that a failure here doesn't cause entire script to exit prematurely
     sudo diskutil unmountDisk "/dev/$DEVICE" || true
 else
-    echo "[-] Internal error 2" >&2
+    echo "[-] Internal error 5" >&2
     exit 1
 fi
 
@@ -641,7 +644,7 @@ case $WIPE_METHOD in
         sudo scrub -f "/dev/$DEVICE"
         ;;
     *)
-        echo "[-] Internal error 3" >&2
+        echo "[-] Internal error 6" >&2
         exit 1
         ;;
 esac
@@ -678,7 +681,7 @@ elif [[ $TOOL_UDF = "$TOOL_NEWFS_UDF" ]]; then
     # --enc - encode volume name in UTF8
     (sudo newfs_udf -b "$FILE_SYSTEM_BLOCK_SIZE" -m blk -t ow -r 2.01 -v "$LABEL" --enc utf8 "/dev/$DEVICE") || (echo "[-] Format failed!" >&2; false)
 else
-    echo "[-] Internal error 4" >&2
+    echo "[-] Internal error 7" >&2
     exit 1
 fi
 
@@ -699,7 +702,7 @@ case $PARTITION_TYPE in
         echo -n 55aa | xxd -r -p | sudo dd of="/dev/$DEVICE" bs=1 seek=510 count=2
         ;;
     *)
-        echo "[-] Internal error 5" >&2
+        echo "[-] Internal error 8" >&2
         exit 1
         ;;
 esac
