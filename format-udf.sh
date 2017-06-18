@@ -4,8 +4,6 @@
 #
 # Bash script to format a block device (hard drive or Flash drive) in UDF. The output is a drive that can be used for reading/writing across multiple operating system families: Windows, macOS, and Linux. This script should be capable of running in macOS or in Linux.
 #
-# Version 1.5.0
-#
 # Copyright (C) 2017 Jonathan Elchison <JElchison@gmail.com>
 #
 # This program is free software; you can redistribute it and/or modify
@@ -31,6 +29,8 @@ set -euf -o pipefail
 # constants
 ###############################################################################
 
+# version of this script
+VERSION=1.5.0
 # maximum number of heads per cylinder
 HPC=255
 # maximum number of sectors per track
@@ -48,7 +48,12 @@ SPT=63
 #   None
 print_usage() {
     cat <<EOF >&2
-Usage:  $0 [-b BLOCK_SIZE] [-f] [-p PARTITION_TYPE] [-w WIPE_METHOD] device label
+Bash script to format a block device (hard drive or Flash drive) in UDF.
+The output is a drive that can be used for reading/writing across multiple
+operating system families: Windows, macOS, and Linux.
+This script should be capable of running in macOS or in Linux.
+
+Usage:  $0 [-b BLOCK_SIZE] [-f] [-p PARTITION_TYPE] [-v] [-w WIPE_METHOD] device label
 
     -b BLOCK_SIZE
         Block size to be used during format operation.
@@ -67,7 +72,10 @@ Usage:  $0 [-b BLOCK_SIZE] [-f] [-p PARTITION_TYPE] [-w WIPE_METHOD] device labe
             none - Do not modify partitions
         If absent, defaults to 'mbr'.
         See also:
-            https://github.com/JElchison/format-udf#a-fake-partition-table-to-fake-out-windows
+            https://github.com/JElchison/format-udf#why
+
+    -v
+        Display version information and exit.
 
     -w WIPE_METHOD
         Wipe method to be used before format operation.
@@ -183,112 +191,6 @@ function exit_with_no_changes {
 
 
 ###############################################################################
-# test dependencies
-###############################################################################
-
-echo "[+] Testing dependencies..."
-if [[ ! -x $(which cat 2>/dev/null) ]] ||
-   [[ ! -x $(which grep 2>/dev/null) ]] ||
-   [[ ! -x $(which egrep 2>/dev/null) ]] ||
-   [[ ! -x $(which mount 2>/dev/null) ]] ||
-   [[ ! -x $(which test 2>/dev/null) ]] ||
-   [[ ! -x $(which true 2>/dev/null) ]] ||
-   [[ ! -x $(which false 2>/dev/null) ]] ||
-   [[ ! -x $(which awk 2>/dev/null) ]] ||
-   [[ ! -x $(which printf 2>/dev/null) ]] ||
-   [[ ! -x $(which sed 2>/dev/null) ]] ||
-   [[ ! -x $(which tr 2>/dev/null) ]] ||
-   [[ ! -x $(which dd 2>/dev/null) ]] ||
-   [[ ! -x $(which xxd 2>/dev/null) ]]; then
-    echo "[-] Dependencies unmet.  Please verify that the following are installed, executable, and in the PATH:  cat, grep, egrep, mount, test, true, false, awk, printf, sed, tr, dd, xxd" >&2
-    exit 1
-fi
-
-
-# ensure have required drive info tool
-echo -n "[+] Looking for drive info tool..."
-# `true` is so that a failure here doesn't cause entire script to exit prematurely
-TOOL_BLOCKDEV=$(which blockdev 2>/dev/null) || true
-# `true` is so that a failure here doesn't cause entire script to exit prematurely
-TOOL_IOREG=$(which ioreg 2>/dev/null) || true
-if [[ -x "$TOOL_BLOCKDEV" ]]; then
-    TOOL_DRIVE_INFO=$TOOL_BLOCKDEV
-elif [[ -x "$TOOL_IOREG" ]]; then
-    TOOL_DRIVE_INFO=$TOOL_IOREG
-else
-    echo
-    echo "[-] Dependencies unmet.  Please verify that at least one of the following are installed, executable, and in the PATH:  blockdev, ioreg" >&2
-    exit 1
-fi
-echo " using $TOOL_DRIVE_INFO"
-
-
-# ensure have required drive listing tool
-echo -n "[+] Looking for drive listing tool..."
-# `true` is so that a failure here doesn't cause entire script to exit prematurely
-TOOL_BLOCKDEV=$(which blockdev 2>/dev/null) || true
-# `true` is so that a failure here doesn't cause entire script to exit prematurely
-TOOL_DISKUTIL=$(which diskutil 2>/dev/null) || true
-if [[ -x "$TOOL_BLOCKDEV" ]]; then
-    TOOL_DRIVE_LISTING=$TOOL_BLOCKDEV
-elif [[ -x "$TOOL_DISKUTIL" ]]; then
-    TOOL_DRIVE_LISTING=$TOOL_DISKUTIL
-else
-    echo
-    echo "[-] Dependencies unmet.  Please verify that at least one of the following are installed, executable, and in the PATH:  blockdev, diskutil" >&2
-    exit 1
-fi
-echo " using $TOOL_DRIVE_LISTING"
-
-
-# ensure have required drive summary tool
-echo -n "[+] Looking for drive summary tool..."
-# `true` is so that a failure here doesn't cause entire script to exit prematurely
-TOOL_BLKID=$(which blkid 2>/dev/null) || true
-if [[ -x "$TOOL_BLOCKDEV" ]]; then
-    TOOL_DRIVE_SUMMARY=$TOOL_BLOCKDEV
-    echo " using $TOOL_DRIVE_SUMMARY"
-fi
-
-
-# ensure have required unmount tool
-echo -n "[+] Looking for unmount tool..."
-# `true` is so that a failure here doesn't cause entire script to exit prematurely
-TOOL_UMOUNT=$(which umount 2>/dev/null) || true
-# `true` is so that a failure here doesn't cause entire script to exit prematurely
-TOOL_DISKUTIL=$(which diskutil 2>/dev/null) || true
-# prefer 'diskutil' if available, as it's required on macOS (even if 'umount' is present)
-if [[ -x "$TOOL_DISKUTIL" ]]; then
-    TOOL_UNMOUNT=$TOOL_DISKUTIL
-elif [[ -x "$TOOL_UMOUNT" ]]; then
-    TOOL_UNMOUNT=$TOOL_UMOUNT
-else
-    echo
-    echo "[-] Dependencies unmet.  Please verify that at least one of the following are installed, executable, and in the PATH:  umount, diskutil" >&2
-    exit 1
-fi
-echo " using $TOOL_UNMOUNT"
-
-
-# ensure have required UDF tool
-echo -n "[+] Looking for UDF tool..."
-# `true` is so that a failure here doesn't cause entire script to exit prematurely
-TOOL_MKUDFFS=$(which mkudffs 2>/dev/null) || true
-# `true` is so that a failure here doesn't cause entire script to exit prematurely
-TOOL_NEWFS_UDF=$(which newfs_udf 2>/dev/null) || true
-if [[ -x "$TOOL_MKUDFFS" ]]; then
-    TOOL_UDF=$TOOL_MKUDFFS
-elif [[ -x "$TOOL_NEWFS_UDF" ]]; then
-    TOOL_UDF=$TOOL_NEWFS_UDF
-else
-    echo
-    echo "[-] Dependencies unmet.  Please verify that at least one of the following are installed, executable, and in the PATH:  mkudffs, newfs_udf" >&2
-    exit 1
-fi
-echo " using $TOOL_UDF"
-
-
-###############################################################################
 # set default options
 ###############################################################################
 
@@ -305,9 +207,7 @@ OPTIND=1
 # parse options
 ###############################################################################
 
-echo "[+] Parsing options..."
-
-while getopts ":b:fp:w:h" opt; do
+while getopts ":b:fp:w:vh" opt; do
     case $opt in
         b)
             ARG_BLOCK_SIZE="$OPTARG"
@@ -340,6 +240,12 @@ while getopts ":b:fp:w:h" opt; do
                     exit 1
                 fi
             fi
+            ;;
+        v)
+            echo "format-udf $VERSION"
+            echo "https://github.com/JElchison/format-udf"
+            echo "Copyright (C) 2017 Jonathan Elchison <JElchison@gmail.com>"
+            exit 0
             ;;
         h)
             print_usage
@@ -430,6 +336,112 @@ if [[ "$PARENT_DEVICE" != "$DEVICE" ]]; then
         fi
     fi
 fi
+
+
+###############################################################################
+# test dependencies
+###############################################################################
+
+echo "[+] Testing dependencies..."
+if [[ ! -x $(which cat 2>/dev/null) ]] ||
+   [[ ! -x $(which grep 2>/dev/null) ]] ||
+   [[ ! -x $(which egrep 2>/dev/null) ]] ||
+   [[ ! -x $(which mount 2>/dev/null) ]] ||
+   [[ ! -x $(which test 2>/dev/null) ]] ||
+   [[ ! -x $(which true 2>/dev/null) ]] ||
+   [[ ! -x $(which false 2>/dev/null) ]] ||
+   [[ ! -x $(which awk 2>/dev/null) ]] ||
+   [[ ! -x $(which printf 2>/dev/null) ]] ||
+   [[ ! -x $(which sed 2>/dev/null) ]] ||
+   [[ ! -x $(which tr 2>/dev/null) ]] ||
+   [[ ! -x $(which dd 2>/dev/null) ]] ||
+   [[ ! -x $(which xxd 2>/dev/null) ]]; then
+    echo "[-] Dependencies unmet.  Please verify that the following are installed, executable, and in the PATH:  cat, grep, egrep, mount, test, true, false, awk, printf, sed, tr, dd, xxd" >&2
+    exit 1
+fi
+
+
+# ensure have required drive info tool
+echo -n "[+] Looking for drive info tool..."
+# `true` is so that a failure here doesn't cause entire script to exit prematurely
+TOOL_BLOCKDEV=$(which blockdev 2>/dev/null) || true
+# `true` is so that a failure here doesn't cause entire script to exit prematurely
+TOOL_IOREG=$(which ioreg 2>/dev/null) || true
+if [[ -x "$TOOL_BLOCKDEV" ]]; then
+    TOOL_DRIVE_INFO=$TOOL_BLOCKDEV
+elif [[ -x "$TOOL_IOREG" ]]; then
+    TOOL_DRIVE_INFO=$TOOL_IOREG
+else
+    echo
+    echo "[-] Dependencies unmet.  Please verify that at least one of the following are installed, executable, and in the PATH:  blockdev, ioreg" >&2
+    exit 1
+fi
+echo " using $TOOL_DRIVE_INFO"
+
+
+# ensure have required drive listing tool
+echo -n "[+] Looking for drive listing tool..."
+# `true` is so that a failure here doesn't cause entire script to exit prematurely
+TOOL_BLOCKDEV=$(which blockdev 2>/dev/null) || true
+# `true` is so that a failure here doesn't cause entire script to exit prematurely
+TOOL_DISKUTIL=$(which diskutil 2>/dev/null) || true
+if [[ -x "$TOOL_BLOCKDEV" ]]; then
+    TOOL_DRIVE_LISTING=$TOOL_BLOCKDEV
+elif [[ -x "$TOOL_DISKUTIL" ]]; then
+    TOOL_DRIVE_LISTING=$TOOL_DISKUTIL
+else
+    echo
+    echo "[-] Dependencies unmet.  Please verify that at least one of the following are installed, executable, and in the PATH:  blockdev, diskutil" >&2
+    exit 1
+fi
+echo " using $TOOL_DRIVE_LISTING"
+
+
+# ensure have required drive summary tool
+echo -n "[+] Looking for drive summary tool..."
+# `true` is so that a failure here doesn't cause entire script to exit prematurely
+TOOL_BLKID=$(which blkid 2>/dev/null) || true
+if [[ -x "$TOOL_BLKID" ]]; then
+    TOOL_DRIVE_SUMMARY=$TOOL_BLKID
+    echo " using $TOOL_DRIVE_SUMMARY"
+fi
+
+
+# ensure have required unmount tool
+echo -n "[+] Looking for unmount tool..."
+# `true` is so that a failure here doesn't cause entire script to exit prematurely
+TOOL_UMOUNT=$(which umount 2>/dev/null) || true
+# `true` is so that a failure here doesn't cause entire script to exit prematurely
+TOOL_DISKUTIL=$(which diskutil 2>/dev/null) || true
+# prefer 'diskutil' if available, as it's required on macOS (even if 'umount' is present)
+if [[ -x "$TOOL_DISKUTIL" ]]; then
+    TOOL_UNMOUNT=$TOOL_DISKUTIL
+elif [[ -x "$TOOL_UMOUNT" ]]; then
+    TOOL_UNMOUNT=$TOOL_UMOUNT
+else
+    echo
+    echo "[-] Dependencies unmet.  Please verify that at least one of the following are installed, executable, and in the PATH:  umount, diskutil" >&2
+    exit 1
+fi
+echo " using $TOOL_UNMOUNT"
+
+
+# ensure have required UDF tool
+echo -n "[+] Looking for UDF tool..."
+# `true` is so that a failure here doesn't cause entire script to exit prematurely
+TOOL_MKUDFFS=$(which mkudffs 2>/dev/null) || true
+# `true` is so that a failure here doesn't cause entire script to exit prematurely
+TOOL_NEWFS_UDF=$(which newfs_udf 2>/dev/null) || true
+if [[ -x "$TOOL_MKUDFFS" ]]; then
+    TOOL_UDF=$TOOL_MKUDFFS
+elif [[ -x "$TOOL_NEWFS_UDF" ]]; then
+    TOOL_UDF=$TOOL_NEWFS_UDF
+else
+    echo
+    echo "[-] Dependencies unmet.  Please verify that at least one of the following are installed, executable, and in the PATH:  mkudffs, newfs_udf" >&2
+    exit 1
+fi
+echo " using $TOOL_UDF"
 
 
 ###############################################################################
