@@ -449,9 +449,9 @@ echo " using $TOOL_UDF"
 ###############################################################################
 
 echo "[+] Detecting logical block size..."
-if [[ $TOOL_DRIVE_INFO = "$TOOL_BLOCKDEV" ]]; then
+if [[ $TOOL_DRIVE_LISTING = "$TOOL_BLOCKDEV" ]]; then
     LOGICAL_BLOCK_SIZE=$(sudo blockdev --getss "/dev/$DEVICE")
-elif [[ $TOOL_DRIVE_INFO = "$TOOL_IOREG" ]]; then
+elif [[ $TOOL_DRIVE_LISTING = "$TOOL_DISKUTIL" ]]; then
     LOGICAL_BLOCK_SIZE=$(diskutil info "$DEVICE" | grep -i 'Device Block Size' | awk -F ':' '{print $2}' | awk '{print $1}')
 else
     echo "[-] Internal error 1" >&2
@@ -476,7 +476,8 @@ if [[ $TOOL_DRIVE_INFO = "$TOOL_BLOCKDEV" ]]; then
     PHYSICAL_BLOCK_SIZE=$(sudo blockdev --getpbsz "/dev/$DEVICE")
 elif [[ $TOOL_DRIVE_INFO = "$TOOL_IOREG" ]]; then
     # TODO - the 'Physical Block Size' item isn't always present.  find a more reliable method on macOS.
-    PHYSICAL_BLOCK_SIZE=$(ioreg -c IOMedia -r -d 1 | tr '\n' '\0' | egrep -ao "\{\$[^\+]*$DEVICE.*?    \}\$" | tr '\0' '\n' | grep 'Physical Block Size' | awk '{print $5}')
+    # `true` is so that a failure here doesn't cause entire script to exit prematurely
+    PHYSICAL_BLOCK_SIZE=$(ioreg -c IOMedia -r -d 1 | tr '\n' '\0' | egrep -ao "\{\$[^\+]*$DEVICE.*?    \}\$" | tr '\0' '\n' | grep 'Physical Block Size' | awk '{print $5}') || true
 else
     echo "[-] Internal error 2" >&2
     exit 1
