@@ -26,9 +26,13 @@ format-udf was created to address some OS-specific quirks that prevent a naively
 * Windows does not support hard disks without a partition table.  (This is strange because Windows does not apply the same limitation to flash drives.)
 * macOS seems to only mount UDF file systems that utilize the full disk (not just a partition)
 
-At first glance, these constraints appear to be in partial conflict.  The solution, as suggested by [Pieter](https://web.archive.org/web/20151103171649/http://sipa.ulyssis.org/2010/02/filesystems-for-portable-disks/), is to place a fake partition table (via [MBR](https://en.wikipedia.org/wiki/Master_boot_record)) in the first block of the drive, which lists a single entire-disk partition.  This works because UDF (perhaps intentionally) doesn't utilize the first block.  Unfortunately, there has been no easy way to do this, while juggling all of the other variables (such as device logical block size).
+At first glance, these constraints appear to be in partial conflict.  The solution, as suggested by [Pieter](https://web.archive.org/web/20151103171649/http://sipa.ulyssis.org/2010/02/filesystems-for-portable-disks/), is to place a fake partition table (via [MBR](https://en.wikipedia.org/wiki/Master_boot_record)) in the first block of the drive, which lists a single entire-disk partition.  This works because UDF (perhaps intentionally) doesn't utilize the first block.  Unfortunately, there has been no easy way to do this, while juggling all of the other variables (such as device logical block size).  format-udf writes such a fake MBR for added compatibility on Windows.  If this is not what you desire, you can disable the MBR with `-p none`.
 
-format-udf writes such a fake MBR for added compatibility on Windows.  If this is not what you desire, you can disable the MBR with `-p none`.
+The goal of this project is to **provide access to a cross-platform file system with modern features**, in such a way that is:
+1. Easy to use for the average user
+2. Maximally compatible across operating systems
+3. As compliant as is reasonable with the UDF specification
+4. Maximally flexible to help users with uncommon needs
 
 
 # UDF OS Support
@@ -127,8 +131,7 @@ Usage:  ./format-udf.sh [-b BLOCK_SIZE] [-f] [-p PARTITION_TYPE] [-w WIPE_METHOD
     -b BLOCK_SIZE
         Block size to be used during format operation.
         If absent, defaults to value reported by blockdev/diskutil.
-        This is useful in light of the following Linux kernel bug:
-            https://bugzilla.kernel.org/show_bug.cgi?id=102271
+        This is an expert-only option.  Please consult the README for details.
 
     -f
         Forces non-interactive mode.  Useful for scripting.
@@ -281,7 +284,7 @@ Please disconnect/reconnect your drive now.
 # Caveats
 
 ### Block Size
-If's extremely important that format-udf use the correct block size when formatting your drive.  format-udf will attempt to detect and use the correct (logical) block size.  However, in rare cases, Linux can [lie](https://bugzilla.kernel.org/show_bug.cgi?id=102271) about the block size.  macOS is known to report the incorrect block size in certain scenarios as well.  In these cases, the format-udf `-b BLOCK_SIZE` option can be used to explicitly override the detected block size value.
+If's extremely important that format-udf use the correct block size when formatting your drive.  format-udf will attempt to detect and use the correct (logical) block size.  If you know what you're doing, the format-udf `-b BLOCK_SIZE` option can be used to explicitly override the detected block size value.
 
 If the wrong block size is used while formatting (i.e. one that doesn't match the logical block size of your drive), the resultant drive will likely have OS compatibility issues and suffer from non-optimal performance issues.
 
