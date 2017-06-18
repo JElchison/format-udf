@@ -115,7 +115,14 @@ format-udf is a self-contained script.  Simply copy format-udf.sh to a directory
 
 # Usage
 ```
+Bash script to format a block device (hard drive or Flash drive) in UDF.
+The output is a drive that can be used for reading/writing across multiple
+operating system families: Windows, macOS, and Linux.
+This script should be capable of running in macOS or in Linux.
+
 Usage:  ./format-udf.sh [-b BLOCK_SIZE] [-f] [-p PARTITION_TYPE] [-w WIPE_METHOD] device label
+        ./format-udf.sh -v
+        ./format-udf.sh -h
 
     -b BLOCK_SIZE
         Block size to be used during format operation.
@@ -127,6 +134,9 @@ Usage:  ./format-udf.sh [-b BLOCK_SIZE] [-f] [-p PARTITION_TYPE] [-w WIPE_METHOD
         Forces non-interactive mode.  Useful for scripting.
         Please use with caution, as no user confirmation is given.
 
+    -h
+        Display help information and exit.
+
     -p PARTITION_TYPE
         Partition type to set during format operation.
         Currently supported types include:  mbr, none
@@ -134,7 +144,10 @@ Usage:  ./format-udf.sh [-b BLOCK_SIZE] [-f] [-p PARTITION_TYPE] [-w WIPE_METHOD
             none - Do not modify partitions
         If absent, defaults to 'mbr'.
         See also:
-            https://github.com/JElchison/format-udf#a-fake-partition-table-to-fake-out-windows
+            https://github.com/JElchison/format-udf#why
+
+    -v
+        Display version information and exit.
 
     -w WIPE_METHOD
         Wipe method to be used before format operation.
@@ -156,7 +169,7 @@ Usage:  ./format-udf.sh [-b BLOCK_SIZE] [-f] [-p PARTITION_TYPE] [-w WIPE_METHOD
     label
         Label to apply to formatted device.
 
-Example:  ./format-udf.sh sdg "My External Drive"
+Example:  ./format-udf.sh sdg "My UDF External Drive"
 ```
 
 
@@ -164,32 +177,39 @@ Example:  ./format-udf.sh sdg "My External Drive"
 On Ubuntu:
 ```
 user@computer:~$ ./format-udf.sh sdg "My UDF External Drive"
+[+] Validating arguments...
 [+] Testing dependencies...
+[+] Looking for drive info tool... using /sbin/blockdev
 [+] Looking for drive listing tool... using /sbin/blockdev
+[+] Looking for drive summary tool... using /sbin/blkid
 [+] Looking for unmount tool... using /bin/umount
 [+] Looking for UDF tool... using /usr/bin/mkudffs
-[+] Parsing options...
-[+] Validating arguments...
-[+] Gathering drive information...
+[+] Detecting logical block size...
 [sudo] password for user: 
-/dev/sdg: LABEL="Old Drive" TYPE="udf" 
-HTS721010G9SA00 
+[*] Detected logical block size of 512
+[+] Validating detected logical block size...
+[+] Detecting physical block size...
+[*] Detected physical block size of 512
+[+] Validating detected physical block size...
+[+] Validating file system block size...
+[*] Using file system block size of 512
+[+] Detecting total size...
+[*] Detected total size of 31040995328
+[+] Validating detected total size...
+[+] Gathering drive information...
+/dev/sdg: UUID="41A4EE1A20286d61" LABEL="Old Drive" TYPE="udf" PTTYPE="dos"
+                
 RO    RA   SSZ   BSZ   StartSec            Size   Device
-rw   256   512  4096          0    100030242816   /dev/sdg
+rw   256   512  4096          0     31040995328   /dev/sdg
+rw   256   512   512          0     31040995328   /dev/sdg1
 The above-listed device (and partitions, if any) will be completely erased.
 Type 'yes' if this is what you intend:  yes
-[+] Detecting total size...
-[*] Using total size of 100030242816
-[+] Validating detected total size...
-[+] Detecting physical block size...
-[*] Using block size of 512
-[+] Validating detected block size...
 [+] Unmounting device...
 umount: /dev/sdg: not mounted
 [+] Zeroing out first chunk of device...
 4096+0 records in
 4096+0 records out
-2097152 bytes (2.1 MB) copied, 0.531167 s, 3.9 MB/s
+2097152 bytes (2.1 MB, 2.0 MiB) copied, 0.240331 s, 8.7 MB/s
 [+] Formatting /dev/sdg ...
 start=0, blocks=64, type=RESERVED 
 start=64, blocks=12, type=VRS 
@@ -197,59 +217,63 @@ start=76, blocks=180, type=USPACE
 start=256, blocks=1, type=ANCHOR 
 start=257, blocks=16, type=PVDS 
 start=273, blocks=1, type=LVID 
-start=274, blocks=195371037, type=PSPACE 
-start=195371311, blocks=1, type=ANCHOR 
-start=195371312, blocks=239, type=USPACE 
-start=195371551, blocks=16, type=RVDS 
-start=195371567, blocks=1, type=ANCHOR 
+start=274, blocks=60626413, type=PSPACE 
+start=60626687, blocks=1, type=ANCHOR 
+start=60626688, blocks=239, type=USPACE 
+start=60626927, blocks=16, type=RVDS 
+start=60626943, blocks=1, type=ANCHOR 
 [+] Writing fake MBR...
 16+0 records in
 16+0 records out
-16 bytes (16 B) copied, 0.00259109 s, 6.2 kB/s
+16 bytes copied, 0.0219986 s, 0.7 kB/s
 2+0 records in
 2+0 records out
-2 bytes (2 B) copied, 0.000108835 s, 18.4 kB/s
-[+] Successfully formatted /dev/sdg: LABEL="My UDF External Drive" TYPE="udf" 
+2 bytes copied, 0.000358472 s, 5.6 kB/s
+[+] Successfully formatted /dev/sdg: UUID="59467176LinuxUDF" LABEL="My UDF External Drive" TYPE="udf" PTTYPE="dos"
 Please disconnect/reconnect your drive now.
 ```
 
 On macOS:
 ```
 computer:~ user$ ./format-udf.sh disk2 "My UDF External Drive"
+[+] Validating arguments...
 [+] Testing dependencies...
+[+] Looking for drive info tool... using /usr/sbin/ioreg
 [+] Looking for drive listing tool... using /usr/sbin/diskutil
+[+] Looking for drive summary tool... using (none)
 [+] Looking for unmount tool... using /usr/sbin/diskutil
 [+] Looking for UDF tool... using /sbin/newfs_udf
-[+] Parsing options...
-[+] Validating arguments...
+[+] Detecting logical block size...
+[*] Detected logical block size of 512
+[+] Validating detected logical block size...
+[+] Detecting physical block size...
+[+] Validating file system block size...
+[*] Using file system block size of 512
+[+] Detecting total size...
+[*] Detected total size of 31040995328
+[+] Validating detected total size...
 [+] Gathering drive information...
-/dev/disk2
+/dev/disk2 (external, physical):
    #:                       TYPE NAME                    SIZE       IDENTIFIER
-   0:                            Old Drive              *100.0 GB   disk2
+   0:                            Old Drive              *31.0 GB    disk2
 The above-listed device (and partitions, if any) will be completely erased.
 Type 'yes' if this is what you intend:  yes
-[+] Detecting total size...
-[*] Using total size of 100030242816
-[+] Validating detected total size...
-[+] Detecting physical block size...
-[*] Using block size of 512
-[+] Validating detected block size...
 [+] Unmounting device...
 Password:
 Unmount of all volumes on disk2 was successful
 [+] Zeroing out first chunk of device...
 4096+0 records in
 4096+0 records out
-2097152 bytes transferred in 0.592766 secs (3537908 bytes/sec)
+2097152 bytes transferred in 2.971664 secs (705716 bytes/sec)
 [+] Formatting /dev/disk2 ...
-write to block device: /dev/disk2  last written block address: 195371567
+write to block device: /dev/disk2  last written block address: 60626943
 [+] Writing fake MBR...
 16+0 records in
 16+0 records out
-16 bytes transferred in 0.044496 secs (360 bytes/sec)
+16 bytes transferred in 0.034208 secs (468 bytes/sec)
 2+0 records in
 2+0 records out
-2 bytes transferred in 0.000602 secs (3322 bytes/sec)
+2 bytes transferred in 0.002100 secs (952 bytes/sec)
 [+] Successfully formatted
 Please disconnect/reconnect your drive now.
 ```
