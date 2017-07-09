@@ -15,6 +15,9 @@ install:
 script:
  - bash -c 'shopt -s globstar; shellcheck **/*.sh'
  - bash -c 'shopt -s globstar; bashate **/*.sh'
+ - ./format-udf.sh -v
+ - ./format-udf.sh -h
+ - ./unit-test.sh
 
 matrix:
   fast_finish: true
