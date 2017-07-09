@@ -8,6 +8,9 @@ addons:
     - debian-sid    # Grab ShellCheck from the Debian repo
     packages:
     - shellcheck
+    - udftools
+    - coreutils
+    - vim-common
 
 install:
  - pip install --user bashate
