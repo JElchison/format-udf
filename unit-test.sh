@@ -26,8 +26,7 @@ sync
 sudo losetup -f $IMAGE_FILE
 # get path to new loop device
 losetup -h
-losetup -a -l || true
-DEVICE=$(sudo losetup -a | grep $IMAGE_FILE | head -n 1 | awk '{print $1}' | sed -r 's|^/dev/||')
+DEVICE=$(sudo losetup -a -l | grep $IMAGE_FILE | head -n 1 | awk '{print $1}' | sed -r 's|^/dev/||')
 
 
 # perform the UDF format.
