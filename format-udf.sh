@@ -289,7 +289,7 @@ DEVICE=$1
 LABEL=$2
 
 # validate device identifier (may be partition)
-(echo "$DEVICE" | egrep -q '^(([hs]d[a-z])([1-9][0-9]*)?|(disk[0-9]+)(s[1-9][0-9]*)?)$') || (echo "[-] <device> is of invalid form" >&2; false)
+(echo "$DEVICE" | grep -Eq '^(([hs]d[a-z])([1-9][0-9]*)?|(disk[0-9]+)(s[1-9][0-9]*)?)$') || (echo "[-] <device> is of invalid form" >&2; false)
 
 # verify this is a device, not just a file
 # `true` is so that a failure here doesn't cause entire script to exit prematurely
@@ -314,7 +314,7 @@ else
 fi
 
 # validate parent device identifier (must be entire device)
-(echo "$PARENT_DEVICE" | egrep -q '^([hs]d[a-z]|disk[0-9]+)$') || (echo "[-] <device> is of invalid form (invalid parent device)" >&2; false)
+(echo "$PARENT_DEVICE" | grep -Eq '^([hs]d[a-z]|disk[0-9]+)$') || (echo "[-] <device> is of invalid form (invalid parent device)" >&2; false)
 
 # verify parent is a device, not just a file
 [[ -b /dev/$PARENT_DEVICE ]] || (echo "[-] /dev/$PARENT_DEVICE either doesn't exist or is not block special" >&2; false)
@@ -333,7 +333,7 @@ if [[ "$PARENT_DEVICE" != "$DEVICE" ]]; then
     echo "If you continue, the resultant UDF partition will not be recognized on macOS."
     
     if [[ -z $FORCE ]]; then
-        read -p "Type 'yes' if you would like to continue anyway:  " YES_CASE
+        read -rp "Type 'yes' if you would like to continue anyway:  " YES_CASE
         YES=$(echo "$YES_CASE" | tr '[:upper:]' '[:lower:]')
         if [[ $YES != "yes" ]]; then
             exit 1
@@ -349,7 +349,6 @@ fi
 echo "[+] Testing dependencies..."
 if [[ ! -x $(which cat 2>/dev/null) ]] ||
    [[ ! -x $(which grep 2>/dev/null) ]] ||
-   [[ ! -x $(which egrep 2>/dev/null) ]] ||
    [[ ! -x $(which mount 2>/dev/null) ]] ||
    [[ ! -x $(which test 2>/dev/null) ]] ||
    [[ ! -x $(which true 2>/dev/null) ]] ||
@@ -360,7 +359,7 @@ if [[ ! -x $(which cat 2>/dev/null) ]] ||
    [[ ! -x $(which tr 2>/dev/null) ]] ||
    [[ ! -x $(which dd 2>/dev/null) ]] ||
    [[ ! -x $(which xxd 2>/dev/null) ]]; then
-    echo "[-] Dependencies unmet.  Please verify that the following are installed, executable, and in the PATH:  cat, grep, egrep, mount, test, true, false, awk, printf, sed, tr, dd, xxd" >&2
+    echo "[-] Dependencies unmet.  Please verify that the following are installed, executable, and in the PATH:  cat, grep, mount, test, true, false, awk, printf, sed, tr, dd, xxd" >&2
     exit 1
 fi
 
@@ -469,7 +468,7 @@ echo "[*] Detected logical block size of $LOGICAL_BLOCK_SIZE"
 
 # validate that $LOGICAL_BLOCK_SIZE is numeric > 0 and multiple of 512
 echo "[+] Validating detected logical block size..."
-(echo "$LOGICAL_BLOCK_SIZE" | egrep -q '^[0-9]+$') || (echo "[-] Could not detect logical block size" >&2; false)
+(echo "$LOGICAL_BLOCK_SIZE" | grep -Eq '^[0-9]+$') || (echo "[-] Could not detect logical block size" >&2; false)
 [[ $LOGICAL_BLOCK_SIZE -gt 0 ]] || (echo "[-] Could not detect logical block size" >&2; false)
 [[ $((LOGICAL_BLOCK_SIZE % 512)) -eq 0 ]] || (echo "[-] Could not detect logical block size" >&2; false)
 
@@ -484,7 +483,7 @@ if [[ $TOOL_DRIVE_INFO = "$TOOL_BLOCKDEV" ]]; then
 elif [[ $TOOL_DRIVE_INFO = "$TOOL_IOREG" ]]; then
     # TODO - the 'Physical Block Size' item isn't always present.  find a more reliable method on macOS.
     # `true` is so that a failure here doesn't cause entire script to exit prematurely
-    PHYSICAL_BLOCK_SIZE=$(ioreg -c IOMedia -r -d 1 | tr '\n' '\0' | egrep -ao "\{\$[^\+]*$DEVICE.*?    \}\$" | tr '\0' '\n' | grep 'Physical Block Size' | awk '{print $5}') || true
+    PHYSICAL_BLOCK_SIZE=$(ioreg -c IOMedia -r -d 1 | tr '\n' '\0' | grep -Eao "\{\$[^\+]*$DEVICE.*?    \}\$" | tr '\0' '\n' | grep 'Physical Block Size' | awk '{print $5}') || true
 else
     echo "[-] Internal error 2" >&2
     exit 1
@@ -495,7 +494,7 @@ if [[ -n $PHYSICAL_BLOCK_SIZE ]]; then
 
     # validate that $PHYSICAL_BLOCK_SIZE is numeric > 0 and multiple of 512
     echo "[+] Validating detected physical block size..."
-    (echo "$PHYSICAL_BLOCK_SIZE" | egrep -q '^[0-9]+$') || (echo "[-] Could not detect physical block size" >&2; false)
+    (echo "$PHYSICAL_BLOCK_SIZE" | grep -Eq '^[0-9]+$') || (echo "[-] Could not detect physical block size" >&2; false)
     [[ $PHYSICAL_BLOCK_SIZE -gt 0 ]] || (echo "[-] Could not detect physical block size" >&2; false)
     [[ $((PHYSICAL_BLOCK_SIZE % 512)) -eq 0 ]] || (echo "[-] Could not detect physical block size" >&2; false)
 
@@ -518,7 +517,7 @@ if [[ -n $PHYSICAL_BLOCK_SIZE ]]; then
         echo "Please see the format-udf README for more information/limitations."
         
         if [[ -z $FORCE ]]; then
-            read -p "Type 'yes' if you would like to continue anyway:  " YES_CASE
+            read -rp "Type 'yes' if you would like to continue anyway:  " YES_CASE
             YES=$(echo "$YES_CASE" | tr '[:upper:]' '[:lower:]')
             if [[ $YES != "yes" ]]; then
                 exit 1
@@ -542,7 +541,7 @@ fi
 
 # validate that $FILE_SYSTEM_BLOCK_SIZE is numeric > 0 and multiple of 512
 echo "[+] Validating file system block size..."
-(echo "$FILE_SYSTEM_BLOCK_SIZE" | egrep -q '^[0-9]+$') || (echo "[-] Invalid file system block size" >&2; false)
+(echo "$FILE_SYSTEM_BLOCK_SIZE" | grep -Eq '^[0-9]+$') || (echo "[-] Invalid file system block size" >&2; false)
 [[ $FILE_SYSTEM_BLOCK_SIZE -gt 0 ]] || (echo "[-] Invalid file system block size" >&2; false)
 [[ $((FILE_SYSTEM_BLOCK_SIZE % 512)) -eq 0 ]] || (echo "[-] Invalid file system block size" >&2; false)
 
@@ -557,7 +556,7 @@ echo "[+] Detecting total size..."
 if [[ $TOOL_DRIVE_LISTING = "$TOOL_BLOCKDEV" ]]; then
     TOTAL_SIZE=$(sudo blockdev --getsize64 "/dev/$DEVICE")
 elif [[ $TOOL_DRIVE_LISTING = "$TOOL_DISKUTIL" ]]; then
-    TOTAL_SIZE=$(diskutil info "$DEVICE" | egrep -i '(Total|Disk) Size' | awk -F ':' '{print $2}' | egrep -oi '\([0-9]+ B' | sed 's/[^0-9]//g')
+    TOTAL_SIZE=$(diskutil info "$DEVICE" | grep -Ei '(Total|Disk) Size' | awk -F ':' '{print $2}' | grep -Eoi '\([0-9]+ B' | sed 's/[^0-9]//g')
 else
     echo "[-] Internal error 3" >&2
     exit 1
@@ -567,7 +566,7 @@ echo "[*] Detected total size of $TOTAL_SIZE"
 
 # validate that $TOTAL_SIZE is numeric > 0
 echo "[+] Validating detected total size..."
-(echo "$TOTAL_SIZE" | egrep -q '^[0-9]+$') || (echo "[-] Could not detect valid total size" >&2; false)
+(echo "$TOTAL_SIZE" | grep -Eq '^[0-9]+$') || (echo "[-] Could not detect valid total size" >&2; false)
 [[ $TOTAL_SIZE -gt 0 ]] || (echo "[-] Could not detect valid total size" >&2; false)
 
 # verify entire drive capacity can be used
@@ -579,7 +578,7 @@ if [[ $((TOTAL_SIZE/LOGICAL_BLOCK_SIZE)) -ge $(((2**32)-1)) ]]; then
     echo "Please see the format-udf README for more information."
     
     if [[ -z $FORCE ]]; then
-        read -p "Type 'yes' if you would like to continue anyway:  " YES_CASE
+        read -rp "Type 'yes' if you would like to continue anyway:  " YES_CASE
         YES=$(echo "$YES_CASE" | tr '[:upper:]' '[:lower:]')
         if [[ $YES != "yes" ]]; then
             exit 1
@@ -596,7 +595,7 @@ echo "[+] Gathering drive information..."
 if [[ $TOOL_DRIVE_SUMMARY = "$TOOL_BLKID" ]] && [[ $TOOL_DRIVE_LISTING = "$TOOL_BLOCKDEV" ]]; then
     sudo blkid -c /dev/null "/dev/$DEVICE" || true
     cat "/sys/block/$PARENT_DEVICE/device/model"
-    sudo blockdev --report | egrep "(Device|$DEVICE)"
+    sudo blockdev --report | grep -E "(Device|$DEVICE)"
 elif [[ $TOOL_DRIVE_LISTING = "$TOOL_DISKUTIL" ]]; then
     diskutil list "$DEVICE"
 else
@@ -607,7 +606,7 @@ fi
 if [[ -z $FORCE ]]; then
     echo "The above-listed device (and partitions, if any) will be completely erased."
     
-    read -p "Type 'yes' if this is what you intend:  " YES_CASE
+    read -rp "Type 'yes' if this is what you intend:  " YES_CASE
     YES=$(echo "$YES_CASE" | tr '[:upper:]' '[:lower:]')
     if [[ $YES != "yes" ]]; then
         exit 1
