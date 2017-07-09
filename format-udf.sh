@@ -30,7 +30,7 @@ set -euf -o pipefail
 ###############################################################################
 
 # version of this script
-VERSION=1.5.0
+VERSION=1.5.1
 # maximum number of heads per cylinder
 HPC=255
 # maximum number of sectors per track
