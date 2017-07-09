@@ -9,9 +9,12 @@ addons:
     packages:
     - shellcheck
 
-script:
- - bash -c 'shopt -s globstar; shellcheck **/*.{sh,bash}'
+install:
  - pip install --user bashate
+
+script:
+ - bash -c 'shopt -s globstar; shellcheck **/*.sh'
+ - bash -c 'shopt -s globstar; bashate **/*.sh'
 
 matrix:
   fast_finish: true
