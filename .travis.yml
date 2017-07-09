@@ -5,7 +5,7 @@ sudo: required
 install:
  - sudo apt-get -qq update
  - sudo apt-get install -y udftools coreutils vim-common
- - sudo add-apt-repository -y ppa:ppa:gnome3-team/gnome3
+ - sudo add-apt-repository -y ppa:gnome3-team/gnome3
  - sudo apt-get -qq update
  - sudo apt-get install -y udisks2
  - curl https://ftp-master.debian.org/keys/archive-key-7.0.asc | sudo apt-key add -
