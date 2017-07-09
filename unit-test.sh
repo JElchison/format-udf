@@ -25,8 +25,7 @@ sync
 # create loop device
 sudo losetup -f $IMAGE_FILE
 # get path to new loop device
-losetup -h
-DEVICE=$(sudo losetup -a -l | grep $IMAGE_FILE | head -n 1 | awk '{print $1}' | sed -r 's|^/dev/||')
+DEVICE=$(sudo losetup -a | grep $IMAGE_FILE | awk -F ':' '{print $1}' | sed -r 's|^/dev/||')
 
 
 # perform the UDF format.
@@ -44,7 +43,7 @@ DEVICE=
 # create loop device
 sudo losetup -f $IMAGE_FILE
 # get path to new loop device
-DEVICE=$(sudo losetup -a | grep $IMAGE_FILE | head -n 1 | awk '{print $1}' | sed -r 's|^/dev/||')
+DEVICE=$(sudo losetup -a | grep $IMAGE_FILE | awk -F ':' '{print $1}' | sed -r 's|^/dev/||')
 
 # mount image
 udisksctl mount -b "/dev/$DEVICE"
@@ -73,7 +72,7 @@ LOCATION=
 # create loop device
 sudo losetup -f $IMAGE_FILE
 # get path to new loop device
-DEVICE=$(sudo losetup -a | grep $IMAGE_FILE | head -n 1 | awk '{print $1}' | sed -r 's|^/dev/||')
+DEVICE=$(sudo losetup -a | grep $IMAGE_FILE | awk -F ':' '{print $1}' | sed -r 's|^/dev/||')
 
 # mount image
 udisksctl mount -b /dev/loop0
