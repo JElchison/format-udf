@@ -46,7 +46,7 @@ sudo losetup -f $IMAGE_FILE
 DEVICE=$(sudo losetup -a | grep $IMAGE_FILE | awk -F ':' '{print $1}' | sed -r 's|^/dev/||')
 
 # mount image
-udisksctl mount -b "/dev/$DEVICE"
+sudo udisksctl mount -b "/dev/$DEVICE"
 # ensure udf
 mount | grep "$DEVICE" | grep udf
 # find where mounted
@@ -60,7 +60,7 @@ cp -fv $TESTDATA_FILE "$LOCATION/$TESTDATA_DIR/"
 
 
 # unmount image
-umount "/dev/$DEVICE"
+sudo umount "/dev/$DEVICE"
 
 # delete loop device
 sudo losetup -d "/dev/$DEVICE"
@@ -75,7 +75,7 @@ sudo losetup -f $IMAGE_FILE
 DEVICE=$(sudo losetup -a | grep $IMAGE_FILE | awk -F ':' '{print $1}' | sed -r 's|^/dev/||')
 
 # mount image
-udisksctl mount -b /dev/loop0
+sudo udisksctl mount -b "/dev/$DEVICE"
 # ensure udf
 mount | grep "$DEVICE" | grep udf
 # find where mounted
@@ -87,7 +87,7 @@ diff -s $TESTDATA_FILE "$LOCATION/$TESTDATA_DIR/$TESTDATA_FILE"
 
 
 # unmount image
-umount "/dev/$DEVICE"
+sudo umount "/dev/$DEVICE"
 
 # delete loop device
 sudo losetup -d "/dev/$DEVICE"
