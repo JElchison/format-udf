@@ -2,13 +2,16 @@ language: bash
 
 sudo: required
 
+before_install:
+  - sudo apt-get -qq update
+  - sudo apt-get install -y udftools coreutils vim-common
+  
 addons:
   apt:
     sources:
     - debian-sid    # Grab ShellCheck from the Debian repo
     packages:
     - shellcheck
-    - udftools
 
 install:
  - pip install --user bashate
