@@ -3,6 +3,8 @@ format-udf
 
 Bash script to format a block device (hard drive or Flash drive) in UDF. The output is a drive that can be used for reading/writing across multiple operating system families: Windows, macOS, and Linux. This script should be capable of running in macOS or in Linux.
 
+[![Build Status](https://travis-ci.org/JElchison/format-udf.svg?branch=master)](https://travis-ci.org/JElchison/format-udf)
+
 
 # Features
 * Formats a block device (hard drive or Flash drive) in <a href="https://en.wikipedia.org/wiki/Universal_Disk_Format">Universal Disk Format (UDF)</a>
