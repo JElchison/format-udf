@@ -25,6 +25,7 @@ sync
 # create loop device
 sudo losetup -f $IMAGE_FILE
 # get path to new loop device
+sudo losetup -a
 DEVICE=$(sudo losetup -a | grep $IMAGE_FILE | head -n 1 | awk '{print $1}' | sed -r 's|^/dev/||')
 
 
