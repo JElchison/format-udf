@@ -9,8 +9,6 @@ addons:
     packages:
     - shellcheck
     - udftools
-    - coreutils
-    - vim-common
 
 install:
  - pip install --user bashate
