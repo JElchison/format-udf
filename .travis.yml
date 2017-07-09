@@ -1,0 +1,15 @@
+language: bash
+
+sudo: false
+
+addons:
+  apt:
+    packages:
+    - shellcheck
+
+script:
+ - bash -c 'shopt -s globstar; shellcheck **/*.{sh,bash}'
+ - pip install --user bashate
+
+matrix:
+  fast_finish: true
