@@ -83,7 +83,7 @@ LOCATION=$(mount | grep "$DEVICE" | sed -r 's/^.* on (.+) type udf .*$/\1/')
 
 
 # verify the file still readable after having remounted
-diff -s $TESTDATA_FILE "$LOCATION/$TESTDATA_DIR/$TESTDATA_FILE"
+sudo diff -s $TESTDATA_FILE "$LOCATION/$TESTDATA_DIR/$TESTDATA_FILE"
 
 
 # unmount image
