@@ -5,13 +5,10 @@ sudo: required
 before_install:
   - sudo apt-get -qq update
   - sudo apt-get install -y udftools coreutils vim-common
-  
-addons:
-  apt:
-    sources:
-    - debian-sid    # Grab ShellCheck from the Debian repo
-    packages:
-    - shellcheck
+  - curl https://ftp-master.debian.org/keys/archive-key-7.0.asc | sudo apt-key add -
+  - echo "deb http://ftp.us.debian.org/debian unstable main contrib non-free" | sudo tee -a /etc/apt/sources.list
+  - sudo apt-get -qq update
+  - sudo apt-get install shellcheck -y
 
 install:
  - pip install --user bashate
