@@ -39,3 +39,12 @@
 Session.vim
 .netrwhist
 *~
+
+
+#############
+# format-udf
+#############
+
+testdata.bin
+testdir/
+
