@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # setup Bash environment
-set -euf -o pipefail
+set -eufx -o pipefail
 
 
 TESTDATA_FILE=testdata.bin
