@@ -384,7 +384,7 @@ fi
 # ensure have required drive info tool
 echo -n "[+] Looking for drive info tool..."
 # `true` is so that a failure here doesn't cause entire script to exit prematurely
-TOOL_BLOCKDEV=$(which blockdev 2>/dev/null) || true
+TOOL_BLOCKDEV=$($SUDO which blockdev 2>/dev/null) || true
 # `true` is so that a failure here doesn't cause entire script to exit prematurely
 TOOL_IOREG=$(which ioreg 2>/dev/null) || true
 if [[ -x "$TOOL_BLOCKDEV" ]]; then
@@ -402,7 +402,7 @@ echo " using $TOOL_DRIVE_INFO"
 # ensure have required drive listing tool
 echo -n "[+] Looking for drive listing tool..."
 # `true` is so that a failure here doesn't cause entire script to exit prematurely
-TOOL_BLOCKDEV=$(which blockdev 2>/dev/null) || true
+TOOL_BLOCKDEV=$($SUDO which blockdev 2>/dev/null) || true
 # `true` is so that a failure here doesn't cause entire script to exit prematurely
 TOOL_DISKUTIL=$(which diskutil 2>/dev/null) || true
 if [[ -x "$TOOL_BLOCKDEV" ]]; then
@@ -420,7 +420,7 @@ echo " using $TOOL_DRIVE_LISTING"
 # ensure have required drive summary tool
 echo -n "[+] Looking for drive summary tool..."
 # `true` is so that a failure here doesn't cause entire script to exit prematurely
-TOOL_BLKID=$(which blkid 2>/dev/null) || true
+TOOL_BLKID=$($SUDO which blkid 2>/dev/null) || true
 if [[ -x "$TOOL_BLKID" ]]; then
     TOOL_DRIVE_SUMMARY=$TOOL_BLKID
     echo " using $TOOL_DRIVE_SUMMARY"
@@ -433,9 +433,9 @@ fi
 # ensure have required unmount tool
 echo -n "[+] Looking for unmount tool..."
 # `true` is so that a failure here doesn't cause entire script to exit prematurely
-TOOL_UMOUNT=$(which umount 2>/dev/null) || true
+TOOL_UMOUNT=$($SUDO which umount 2>/dev/null) || true
 # `true` is so that a failure here doesn't cause entire script to exit prematurely
-TOOL_DISKUTIL=$(which diskutil 2>/dev/null) || true
+TOOL_DISKUTIL=$($SUDO which diskutil 2>/dev/null) || true
 # prefer 'diskutil' if available, as it's required on macOS (even if 'umount' is present)
 if [[ -x "$TOOL_DISKUTIL" ]]; then
     TOOL_UNMOUNT=$TOOL_DISKUTIL
@@ -452,9 +452,9 @@ echo " using $TOOL_UNMOUNT"
 # ensure have required UDF tool
 echo -n "[+] Looking for UDF tool..."
 # `true` is so that a failure here doesn't cause entire script to exit prematurely
-TOOL_MKUDFFS=$(which mkudffs 2>/dev/null) || true
+TOOL_MKUDFFS=$($SUDO which mkudffs 2>/dev/null) || true
 # `true` is so that a failure here doesn't cause entire script to exit prematurely
-TOOL_NEWFS_UDF=$(which newfs_udf 2>/dev/null) || true
+TOOL_NEWFS_UDF=$($SUDO which newfs_udf 2>/dev/null) || true
 if [[ -x "$TOOL_MKUDFFS" ]]; then
     TOOL_UDF=$TOOL_MKUDFFS
 elif [[ -x "$TOOL_NEWFS_UDF" ]]; then
