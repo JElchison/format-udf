@@ -24,11 +24,23 @@
 # setup Bash environment
 set -euf -o pipefail
 
-# setup sudo
+
+# handle following scenarios:
+#   * unprivileged user (i.e. not root, sudo not used)
+#   * privileged user (i.e. not root, sudo used)
+#   * root user (i.e. sudo not used)
 SUDO=''
 if [[ $(id -u) -ne 0 ]]; then
+    # verify that 'sudo' is present before assuming we can use it
+    if [[ ! -x $(which sudo 2>/dev/null) ]]; then
+        echo "[-] Dependencies unmet.  Please verify that 'sudo' is installed, executable, and in the PATH." >&2
+        echo "Alternatively, you may also re-run this script as root." >&2
+        exit 1
+    fi
+
     SUDO='sudo'
 fi
+
 
 ###############################################################################
 # constants
