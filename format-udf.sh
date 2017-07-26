@@ -24,6 +24,11 @@
 # setup Bash environment
 set -euf -o pipefail
 
+# setup sudo
+SUDO=''
+if [[ $(id -u) -ne 0 ]]; then
+    SUDO='sudo'
+fi
 
 ###############################################################################
 # constants
@@ -456,7 +461,7 @@ echo " using $TOOL_UDF"
 
 echo "[+] Detecting logical block size..."
 if [[ $TOOL_DRIVE_LISTING = "$TOOL_BLOCKDEV" ]]; then
-    LOGICAL_BLOCK_SIZE=$(sudo blockdev --getss "/dev/$DEVICE")
+    LOGICAL_BLOCK_SIZE=$($SUDO blockdev --getss "/dev/$DEVICE")
 elif [[ $TOOL_DRIVE_LISTING = "$TOOL_DISKUTIL" ]]; then
     LOGICAL_BLOCK_SIZE=$(diskutil info "$DEVICE" | grep -i 'Device Block Size' | awk -F ':' '{print $2}' | awk '{print $1}')
 else
@@ -479,7 +484,7 @@ echo "[+] Validating detected logical block size..."
 
 echo "[+] Detecting physical block size..."
 if [[ $TOOL_DRIVE_INFO = "$TOOL_BLOCKDEV" ]]; then
-    PHYSICAL_BLOCK_SIZE=$(sudo blockdev --getpbsz "/dev/$DEVICE")
+    PHYSICAL_BLOCK_SIZE=$($SUDO blockdev --getpbsz "/dev/$DEVICE")
 elif [[ $TOOL_DRIVE_INFO = "$TOOL_IOREG" ]]; then
     # TODO - the 'Physical Block Size' item isn't always present.  find a more reliable method on macOS.
     # `true` is so that a failure here doesn't cause entire script to exit prematurely
@@ -554,7 +559,7 @@ echo "[*] Using file system block size of $FILE_SYSTEM_BLOCK_SIZE"
 
 echo "[+] Detecting total size..."
 if [[ $TOOL_DRIVE_LISTING = "$TOOL_BLOCKDEV" ]]; then
-    TOTAL_SIZE=$(sudo blockdev --getsize64 "/dev/$DEVICE")
+    TOTAL_SIZE=$($SUDO blockdev --getsize64 "/dev/$DEVICE")
 elif [[ $TOOL_DRIVE_LISTING = "$TOOL_DISKUTIL" ]]; then
     TOTAL_SIZE=$(diskutil info "$DEVICE" | grep -Ei '(Total|Disk) Size' | awk -F ':' '{print $2}' | grep -Eoi '\([0-9]+ B' | sed 's/[^0-9]//g')
 else
@@ -593,9 +598,9 @@ fi
 
 echo "[+] Gathering drive information..."
 if [[ $TOOL_DRIVE_SUMMARY = "$TOOL_BLKID" ]] && [[ $TOOL_DRIVE_LISTING = "$TOOL_BLOCKDEV" ]]; then
-    sudo blkid -c /dev/null "/dev/$DEVICE" || true
+    $SUDO blkid -c /dev/null "/dev/$DEVICE" || true
     cat "/sys/block/$PARENT_DEVICE/device/model" || true
-    sudo blockdev --report | grep -E "(Device|$DEVICE)"
+    $SUDO blockdev --report | grep -E "(Device|$DEVICE)"
 elif [[ $TOOL_DRIVE_LISTING = "$TOOL_DISKUTIL" ]]; then
     diskutil list "$DEVICE"
 else
@@ -621,10 +626,10 @@ fi
 echo "[+] Unmounting device..."
 if [[ $TOOL_UNMOUNT = "$TOOL_UMOUNT" ]]; then
     # `true` is so that a failure here doesn't cause entire script to exit prematurely
-    sudo umount "/dev/$DEVICE" || true
+    $SUDO umount "/dev/$DEVICE" || true
 elif [[ $TOOL_UNMOUNT = "$TOOL_DISKUTIL" ]]; then
     # `true` is so that a failure here doesn't cause entire script to exit prematurely
-    sudo diskutil unmountDisk "/dev/$DEVICE" || true
+    $SUDO diskutil unmountDisk "/dev/$DEVICE" || true
 else
     echo "[-] Internal error 5" >&2
     exit 1
@@ -644,11 +649,11 @@ case $WIPE_METHOD in
         ;;
     zero)
         echo "[+] Overwriting device with zeros.  This will likely take a LONG time..."
-        sudo dd if=/dev/zero of="/dev/$DEVICE" bs="$LOGICAL_BLOCK_SIZE" || true
+        $SUDO dd if=/dev/zero of="/dev/$DEVICE" bs="$LOGICAL_BLOCK_SIZE" || true
         ;;
     scrub)
         echo "[+] Scrubbing device with random patterns.  This will likely take a LONG time..."
-        sudo scrub -f "/dev/$DEVICE"
+        $SUDO scrub -f "/dev/$DEVICE"
         ;;
     *)
         echo "[-] Internal error 6" >&2
@@ -663,7 +668,7 @@ esac
 
 echo "[+] Zeroing out first chunk of device..."
 # 4096 was arbitrarily chosen to be "big enough" to delete first chunk of device
-sudo dd if=/dev/zero of="/dev/$DEVICE" bs="$LOGICAL_BLOCK_SIZE" count=4096
+$SUDO dd if=/dev/zero of="/dev/$DEVICE" bs="$LOGICAL_BLOCK_SIZE" count=4096
 
 
 ###############################################################################
@@ -678,7 +683,7 @@ if [[ $TOOL_UDF = "$TOOL_MKUDFFS" ]]; then
     # --lvid       - logical volume identifier
     # --vid        - volume identifier
     # --media-type - "hd" type covers both hard drives and USB drives
-    (sudo mkudffs --utf8 --blocksize="$FILE_SYSTEM_BLOCK_SIZE" --udfrev=0x0201 --lvid="$LABEL" --vid="$LABEL" --media-type=hd "/dev/$DEVICE") || (echo "[-] Format failed!" >&2; false)
+    ($SUDO mkudffs --utf8 --blocksize="$FILE_SYSTEM_BLOCK_SIZE" --udfrev=0x0201 --lvid="$LABEL" --vid="$LABEL" --media-type=hd "/dev/$DEVICE") || (echo "[-] Format failed!" >&2; false)
 elif [[ $TOOL_UDF = "$TOOL_NEWFS_UDF" ]]; then
     # -b    - the size of blocks in bytes. should be the same as the drive's physical block size.
     # -m    - "blk" type covers both hard drives and USB drives
@@ -686,7 +691,7 @@ elif [[ $TOOL_UDF = "$TOOL_NEWFS_UDF" ]]; then
     # -r    - the udf revision to use.  2.01 is the latest revision available that supports writing in Linux.
     # -v    - volume identifier
     # --enc - encode volume name in UTF8
-    (sudo newfs_udf -b "$FILE_SYSTEM_BLOCK_SIZE" -m blk -t ow -r 2.01 -v "$LABEL" --enc utf8 "/dev/$DEVICE") || (echo "[-] Format failed!" >&2; false)
+    ($SUDO newfs_udf -b "$FILE_SYSTEM_BLOCK_SIZE" -m blk -t ow -r 2.01 -v "$LABEL" --enc utf8 "/dev/$DEVICE") || (echo "[-] Format failed!" >&2; false)
 else
     echo "[-] Internal error 7" >&2
     exit 1
@@ -704,9 +709,9 @@ case $PARTITION_TYPE in
     mbr)
         echo "[+] Writing fake MBR..."
         # first block has already been zero'd.  start by writing the (only) partition entry at its correct offset.
-        entire_disk_partition_entry "$TOTAL_SIZE" "$LOGICAL_BLOCK_SIZE" | xxd -r -p | sudo dd of="/dev/$DEVICE" bs=1 seek=446 count=16
+        entire_disk_partition_entry "$TOTAL_SIZE" "$LOGICAL_BLOCK_SIZE" | xxd -r -p | $SUDO dd of="/dev/$DEVICE" bs=1 seek=446 count=16
         # Boot signature at the end of the block
-        echo -n 55aa | xxd -r -p | sudo dd of="/dev/$DEVICE" bs=1 seek=510 count=2
+        echo -n 55aa | xxd -r -p | $SUDO dd of="/dev/$DEVICE" bs=1 seek=510 count=2
         ;;
     *)
         echo "[-] Internal error 8" >&2
@@ -721,8 +726,8 @@ esac
 
 # following call to blkid sometimes exits with failure, even though the device is formatted properly.
 # `true` is so that a failure here doesn't cause entire script to exit prematurely
-SUMMARY=$([[ $TOOL_DRIVE_SUMMARY = "$TOOL_BLKID" ]] && sudo blkid -c /dev/null "/dev/$DEVICE" 2>/dev/null) || true
+SUMMARY=$([[ $TOOL_DRIVE_SUMMARY = "$TOOL_BLKID" ]] && $SUDO blkid -c /dev/null "/dev/$DEVICE" 2>/dev/null) || true
 echo "[+] Successfully formatted $SUMMARY"
 
-# TODO find a way to auto-mount (`sudo mount -a` doesn't work).  in the meantime...
+# TODO find a way to auto-mount (`$SUDO mount -a` doesn't work).  in the meantime...
 echo "Please disconnect/reconnect your drive now."
