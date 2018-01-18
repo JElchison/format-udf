@@ -4,7 +4,7 @@
 #
 # Bash script to format a block device (hard drive or Flash drive) in UDF. The output is a drive that can be used for reading/writing across multiple operating system families: Windows, macOS, and Linux. This script should be capable of running in macOS or in Linux.
 #
-# Copyright (C) 2017 Jonathan Elchison <JElchison@gmail.com>
+# Copyright (C) 2018 Jonathan Elchison <JElchison@gmail.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -47,7 +47,7 @@ fi
 ###############################################################################
 
 # version of this script
-VERSION=1.6.0
+VERSION=1.6.1
 # maximum number of heads per cylinder
 HPC=255
 # maximum number of sectors per track
