@@ -695,7 +695,7 @@ if [[ $TOOL_UDF = "$TOOL_MKUDFFS" ]]; then
     # --lvid       - logical volume identifier
     # --vid        - volume identifier
     # --media-type - "hd" type covers both hard drives and USB drives
-    ($SUDO mkudffs --utf8 --blocksize="$FILE_SYSTEM_BLOCK_SIZE" --udfrev=0x0201 --lvid="$LABEL" --vid="$LABEL" --media-type=hd "/dev/$DEVICE") || (echo "[-] Format failed!" >&2; false)
+    ($SUDO mkudffs --utf8 --blocksize="$FILE_SYSTEM_BLOCK_SIZE" --media-type=hd --udfrev=0x0201 --lvid="$LABEL" --vid="$LABEL" "/dev/$DEVICE") || (echo "[-] Format failed!" >&2; false)
 elif [[ $TOOL_UDF = "$TOOL_NEWFS_UDF" ]]; then
     # -b    - the size of blocks in bytes. should be the same as the drive's physical block size.
     # -m    - "blk" type covers both hard drives and USB drives
