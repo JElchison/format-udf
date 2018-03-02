@@ -691,10 +691,10 @@ echo "[+] Formatting /dev/$DEVICE ..."
 if [[ $TOOL_UDF = "$TOOL_MKUDFFS" ]]; then
     # --utf8       - encode file names in UTF8 (since pali/udftools@52afdce, this must be specified as the first argument)
     # --blocksize  - the size of blocks in bytes. should be the same as the drive's physical block size.
+    # --media-type - "hd" type covers both hard drives and USB drives (since pali/udftools@3aef271, this must be specified before --udfrev)
     # --udfrev     - the udf revision to use.  2.01 is the latest revision available that supports writing in Linux.
     # --lvid       - logical volume identifier
     # --vid        - volume identifier
-    # --media-type - "hd" type covers both hard drives and USB drives
     ($SUDO mkudffs --utf8 --blocksize="$FILE_SYSTEM_BLOCK_SIZE" --media-type=hd --udfrev=0x0201 --lvid="$LABEL" --vid="$LABEL" "/dev/$DEVICE") || (echo "[-] Format failed!" >&2; false)
 elif [[ $TOOL_UDF = "$TOOL_NEWFS_UDF" ]]; then
     # -b    - the size of blocks in bytes. should be the same as the drive's physical block size.
