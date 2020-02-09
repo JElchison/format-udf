@@ -329,7 +329,7 @@ For a human-readable device label, use format-udf in one of the following config
 
 ### Contributions
 
-* Thanks to @walterav1984 for his contribution to add NVMe support
+* Thanks to [@walterav1984](https://github.com/walterav1984) for his contribution to add NVMe support
 
 
 # See Also
