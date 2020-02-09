@@ -32,7 +32,7 @@ set -euf -o pipefail
 SUDO=''
 if [[ $(id -u) -ne 0 ]]; then
     # verify that 'sudo' is present before assuming we can use it
-    if [[ ! -x $(which sudo 2>/dev/null) ]]; then
+    if ! hash sudo 2>/dev/null; then
         echo "[-] Dependencies unmet.  Please verify that 'sudo' is installed, executable, and in the PATH." >&2
         echo "Alternatively, you may also re-run this script as root." >&2
         exit 1
@@ -256,7 +256,7 @@ while getopts ":b:fp:w:vh" opt; do
                 exit 1
             fi
             if [[ "$WIPE_METHOD" = "scrub" ]]; then
-                if [[ ! -x $(which scrub 2>/dev/null) ]]; then
+                if ! hash scrub 2>/dev/null; then
                     echo "[-] Dependencies unmet.  Please verify that the following are installed, executable, and in the PATH:  scrub" >&2
                     exit 1
                 fi
@@ -348,7 +348,7 @@ if [[ "$PARENT_DEVICE" != "$DEVICE" ]]; then
     echo "You are attempting to format a single partition (as opposed to entire device)."
     echo "For maximal compatibility, the recommendation is to format the entire device."
     echo "If you continue, the resultant UDF partition will not be recognized on macOS."
-    
+
     if [[ -z $FORCE ]]; then
         read -rp "Type 'yes' if you would like to continue anyway:  " YES_CASE
         YES=$(echo "$YES_CASE" | tr '[:upper:]' '[:lower:]')
@@ -364,18 +364,18 @@ fi
 ###############################################################################
 
 echo "[+] Testing dependencies..."
-if [[ ! -x $(which cat 2>/dev/null) ]] ||
-   [[ ! -x $(which grep 2>/dev/null) ]] ||
-   [[ ! -x $(which mount 2>/dev/null) ]] ||
-   [[ ! -x $(which test 2>/dev/null) ]] ||
-   [[ ! -x $(which true 2>/dev/null) ]] ||
-   [[ ! -x $(which false 2>/dev/null) ]] ||
-   [[ ! -x $(which awk 2>/dev/null) ]] ||
-   [[ ! -x $(which printf 2>/dev/null) ]] ||
-   [[ ! -x $(which sed 2>/dev/null) ]] ||
-   [[ ! -x $(which tr 2>/dev/null) ]] ||
-   [[ ! -x $(which dd 2>/dev/null) ]] ||
-   [[ ! -x $(which xxd 2>/dev/null) ]]; then
+if ! hash cat 2>/dev/null ||
+   ! hash grep 2>/dev/null ||
+   ! hash mount 2>/dev/null ||
+   ! hash test 2>/dev/null ||
+   ! hash true 2>/dev/null ||
+   ! hash false 2>/dev/null ||
+   ! hash awk 2>/dev/null ||
+   ! hash printf 2>/dev/null ||
+   ! hash sed 2>/dev/null ||
+   ! hash tr 2>/dev/null ||
+   ! hash dd 2>/dev/null ||
+   ! hash xxd 2>/dev/null; then
     echo "[-] Dependencies unmet.  Please verify that the following are installed, executable, and in the PATH:  cat, grep, mount, test, true, false, awk, printf, sed, tr, dd, xxd" >&2
     exit 1
 fi
@@ -384,9 +384,9 @@ fi
 # ensure have required drive info tool
 echo -n "[+] Looking for drive info tool..."
 # `true` is so that a failure here doesn't cause entire script to exit prematurely
-TOOL_BLOCKDEV=$($SUDO which blockdev 2>/dev/null) || true
+TOOL_BLOCKDEV=$(command -v blockdev 2>/dev/null) || true
 # `true` is so that a failure here doesn't cause entire script to exit prematurely
-TOOL_IOREG=$(which ioreg 2>/dev/null) || true
+TOOL_IOREG=$(command -v ioreg 2>/dev/null) || true
 if [[ -x "$TOOL_BLOCKDEV" ]]; then
     TOOL_DRIVE_INFO=$TOOL_BLOCKDEV
 elif [[ -x "$TOOL_IOREG" ]]; then
@@ -402,9 +402,9 @@ echo " using $TOOL_DRIVE_INFO"
 # ensure have required drive listing tool
 echo -n "[+] Looking for drive listing tool..."
 # `true` is so that a failure here doesn't cause entire script to exit prematurely
-TOOL_BLOCKDEV=$($SUDO which blockdev 2>/dev/null) || true
+TOOL_BLOCKDEV=$(command -v blockdev 2>/dev/null) || true
 # `true` is so that a failure here doesn't cause entire script to exit prematurely
-TOOL_DISKUTIL=$(which diskutil 2>/dev/null) || true
+TOOL_DISKUTIL=$(command -v diskutil 2>/dev/null) || true
 if [[ -x "$TOOL_BLOCKDEV" ]]; then
     TOOL_DRIVE_LISTING=$TOOL_BLOCKDEV
 elif [[ -x "$TOOL_DISKUTIL" ]]; then
@@ -420,7 +420,7 @@ echo " using $TOOL_DRIVE_LISTING"
 # ensure have required drive summary tool
 echo -n "[+] Looking for drive summary tool..."
 # `true` is so that a failure here doesn't cause entire script to exit prematurely
-TOOL_BLKID=$($SUDO which blkid 2>/dev/null) || true
+TOOL_BLKID=$(command -v blkid 2>/dev/null) || true
 if [[ -x "$TOOL_BLKID" ]]; then
     TOOL_DRIVE_SUMMARY=$TOOL_BLKID
     echo " using $TOOL_DRIVE_SUMMARY"
@@ -433,9 +433,9 @@ fi
 # ensure have required unmount tool
 echo -n "[+] Looking for unmount tool..."
 # `true` is so that a failure here doesn't cause entire script to exit prematurely
-TOOL_UMOUNT=$($SUDO which umount 2>/dev/null) || true
+TOOL_UMOUNT=$(command -v umount 2>/dev/null) || true
 # `true` is so that a failure here doesn't cause entire script to exit prematurely
-TOOL_DISKUTIL=$($SUDO which diskutil 2>/dev/null) || true
+TOOL_DISKUTIL=$(command -v diskutil 2>/dev/null) || true
 # prefer 'diskutil' if available, as it's required on macOS (even if 'umount' is present)
 if [[ -x "$TOOL_DISKUTIL" ]]; then
     TOOL_UNMOUNT=$TOOL_DISKUTIL
@@ -452,9 +452,9 @@ echo " using $TOOL_UNMOUNT"
 # ensure have required UDF tool
 echo -n "[+] Looking for UDF tool..."
 # `true` is so that a failure here doesn't cause entire script to exit prematurely
-TOOL_MKUDFFS=$($SUDO which mkudffs 2>/dev/null) || true
+TOOL_MKUDFFS=$(command -v mkudffs 2>/dev/null) || true
 # `true` is so that a failure here doesn't cause entire script to exit prematurely
-TOOL_NEWFS_UDF=$($SUDO which newfs_udf 2>/dev/null) || true
+TOOL_NEWFS_UDF=$(command -v newfs_udf 2>/dev/null) || true
 if [[ -x "$TOOL_MKUDFFS" ]]; then
     TOOL_UDF=$TOOL_MKUDFFS
 elif [[ -x "$TOOL_NEWFS_UDF" ]]; then
@@ -525,14 +525,14 @@ if [[ -n $PHYSICAL_BLOCK_SIZE ]]; then
         echo "of $LOGICAL_BLOCK_SIZE bytes and physical block size of $PHYSICAL_BLOCK_SIZE bytes."
         if [[ $LOGICAL_BLOCK_SIZE -eq 512 ]] && [[ $PHYSICAL_BLOCK_SIZE -eq 4096 ]]; then
             echo "This device is an '512 emulation' (512e) drive."
-        elif [[ $LOGICAL_BLOCK_SIZE -eq 4096 ]] && [[ $PHYSICAL_BLOCK_SIZE -eq 4096 ]]; then 
+        elif [[ $LOGICAL_BLOCK_SIZE -eq 4096 ]] && [[ $PHYSICAL_BLOCK_SIZE -eq 4096 ]]; then
             echo "This device is an '4K native' (4Kn) drive."
         fi
         echo "As such, this drive will not be as compatible across operating systems as a standard"
         echo "drive having a logical block size of 512 bytes and a physical block size of 512 bytes."
         echo "For example, this drive will not be usable for read or write on Windows XP."
         echo "Please see the format-udf README for more information/limitations."
-        
+
         if [[ -z $FORCE ]]; then
             read -rp "Type 'yes' if you would like to continue anyway:  " YES_CASE
             YES=$(echo "$YES_CASE" | tr '[:upper:]' '[:lower:]')
@@ -593,7 +593,7 @@ if [[ $((TOTAL_SIZE/LOGICAL_BLOCK_SIZE)) -ge $(((2**32)-1)) ]]; then
     echo "and the remainder of the drive will not be used."
     echo "The maximum UDF file system capacity on this device is $((LOGICAL_BLOCK_SIZE/256)) TiB."
     echo "Please see the format-udf README for more information."
-    
+
     if [[ -z $FORCE ]]; then
         read -rp "Type 'yes' if you would like to continue anyway:  " YES_CASE
         YES=$(echo "$YES_CASE" | tr '[:upper:]' '[:lower:]')
@@ -622,7 +622,7 @@ fi
 
 if [[ -z $FORCE ]]; then
     echo "The above-listed device (and partitions, if any) will be completely erased."
-    
+
     read -rp "Type 'yes' if this is what you intend:  " YES_CASE
     YES=$(echo "$YES_CASE" | tr '[:upper:]' '[:lower:]')
     if [[ $YES != "yes" ]]; then
