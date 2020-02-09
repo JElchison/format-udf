@@ -324,10 +324,10 @@ trap exit_with_no_changes EXIT
 # extract parent device identifier
 if sed --version &> /dev/null; then
     # this box has GNU sed ('-r' for extended regex)
-    PARENT_DEVICE=$(echo "$DEVICE" | sed -r 's/^(([hs]d[a-z])([1-9][0-9]*)?|(nvme[0-9]+n1)(p[1-9][0-9]*)?|(disk[0-9]+)(s[1-9][0-9]*)?|(loop[0-9]+))$/\2\4\6/')
+    PARENT_DEVICE=$(echo "$DEVICE" | sed -r 's/^(([hs]d[a-z])([1-9][0-9]*)?|(nvme[0-9]+n1)(p[1-9][0-9]*)?|(disk[0-9]+)(s[1-9][0-9]*)?|(loop[0-9]+))$/\2\4\6\8/')
 else
     # this machine must have BSD sed ('-E' for extended regex)
-    PARENT_DEVICE=$(echo "$DEVICE" | sed -E 's/^(([hs]d[a-z])([1-9][0-9]*)?|(nvme[0-9]+n1)(p[1-9][0-9]*)?|(disk[0-9]+)(s[1-9][0-9]*)?|(loop[0-9]+))$/\2\4\6/')
+    PARENT_DEVICE=$(echo "$DEVICE" | sed -E 's/^(([hs]d[a-z])([1-9][0-9]*)?|(nvme[0-9]+n1)(p[1-9][0-9]*)?|(disk[0-9]+)(s[1-9][0-9]*)?|(loop[0-9]+))$/\2\4\6\8/')
 fi
 
 # validate parent device identifier (must be entire device)
