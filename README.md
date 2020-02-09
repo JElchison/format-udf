@@ -50,7 +50,7 @@ Windows Vista, 7, 8, 10      |                                                  
 Mac OS 9                     |                                                                                    |
 Mac OS X 10.5 through 10.11  |                                                                                    |
 macOS 10.12+                 |                                                                                    |
-Linux 2.6+, 3.x              |UDF revisions 2.01 and before have read/write.  After UDF revision 2.01, read-only. | 
+Linux 2.6+, 3.x              |UDF revisions 2.01 and before have read/write.  After UDF revision 2.01, read-only. |
 AIX 5.2, 5.3, 6.1            |                                                                                    |
 BeOS, magnussoft ZETA, Haiku |                                                                                    |
 DosBox                       |                                                                                    |
@@ -190,7 +190,7 @@ user@computer:~$ ./format-udf.sh sdg "My UDF External Drive"
 [+] Looking for unmount tool... using /bin/umount
 [+] Looking for UDF tool... using /usr/bin/mkudffs
 [+] Detecting logical block size...
-[sudo] password for user: 
+[sudo] password for user:
 [*] Detected logical block size of 512
 [+] Validating detected logical block size...
 [+] Detecting physical block size...
@@ -203,7 +203,7 @@ user@computer:~$ ./format-udf.sh sdg "My UDF External Drive"
 [+] Validating detected total size...
 [+] Gathering drive information...
 /dev/sdg: UUID="41A4EE1A20286d61" LABEL="Old Drive" TYPE="udf" PTTYPE="dos"
-                
+
 RO    RA   SSZ   BSZ   StartSec            Size   Device
 rw   256   512  4096          0     31040995328   /dev/sdg
 rw   256   512   512          0     31040995328   /dev/sdg1
@@ -216,17 +216,17 @@ umount: /dev/sdg: not mounted
 4096+0 records out
 2097152 bytes (2.1 MB, 2.0 MiB) copied, 0.240331 s, 8.7 MB/s
 [+] Formatting /dev/sdg ...
-start=0, blocks=64, type=RESERVED 
-start=64, blocks=12, type=VRS 
-start=76, blocks=180, type=USPACE 
-start=256, blocks=1, type=ANCHOR 
-start=257, blocks=16, type=PVDS 
-start=273, blocks=1, type=LVID 
-start=274, blocks=60626413, type=PSPACE 
-start=60626687, blocks=1, type=ANCHOR 
-start=60626688, blocks=239, type=USPACE 
-start=60626927, blocks=16, type=RVDS 
-start=60626943, blocks=1, type=ANCHOR 
+start=0, blocks=64, type=RESERVED
+start=64, blocks=12, type=VRS
+start=76, blocks=180, type=USPACE
+start=256, blocks=1, type=ANCHOR
+start=257, blocks=16, type=PVDS
+start=273, blocks=1, type=LVID
+start=274, blocks=60626413, type=PSPACE
+start=60626687, blocks=1, type=ANCHOR
+start=60626688, blocks=239, type=USPACE
+start=60626927, blocks=16, type=RVDS
+start=60626943, blocks=1, type=ANCHOR
 [+] Writing fake MBR...
 16+0 records in
 16+0 records out
@@ -326,6 +326,10 @@ For a human-readable device label, use format-udf in one of the following config
 ### Miscellaneous Tips
 
 * After installing GRUB2 on a partitionless drive, you can use `fdisk` to set the partition as active if your BIOS can't boot from partitionless drives. (Thanks to [@tome-](https://github.com/tome-) for the tip.)
+
+### Contributions
+
+* Thanks to @walterav1984 for his contribution to add NVMe support
 
 
 # See Also
