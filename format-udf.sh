@@ -301,8 +301,8 @@ if [[ $# -ne 2 ]]; then
     exit 1
 fi
 
-# setup variables for arguments
-DEVICE=$1
+# setup variables for arguments and remove '/dev/' prefix when used
+DEVICE=$(echo $1 | sed -e 's|/dev/||')
 LABEL=$2
 
 # validate device identifier (may be partition)
