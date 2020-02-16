@@ -175,7 +175,7 @@ Usage:  ./format-udf.sh [-b BLOCK_SIZE] [-f] [-p PARTITION_TYPE] [-w WIPE_METHOD
     label
         Label to apply to formatted device.
 
-Example:  ./format-udf.sh sdg "My UDF External Drive"
+Example:  ./format-udf.sh /dev/sdg "My UDF External Drive"
 ```
 
 
