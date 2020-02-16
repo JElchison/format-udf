@@ -103,6 +103,7 @@ If you have conducted testing and would like to update this table to benefit fut
     * `xxd`
     * *One* of the following:  `blockdev`, `ioreg`
     * *One* of the following:  `blockdev`, `diskutil`
+    * *One* of the following:  `lsblk`, `diskutil`
     * *One* of the following:  `umount`, `diskutil`
     * *One* of the following:  `mkudffs`, `newfs_udf`
 
@@ -167,9 +168,9 @@ Usage:  ./format-udf.sh [-b BLOCK_SIZE] [-f] [-p PARTITION_TYPE] [-w WIPE_METHOD
         Note:  'zero' and 'scrub' methods will take a long time.
 
     device
-        Device to format.  Should be of the form:
-          * sdx   (Linux, where 'x' is a letter) or
-          * diskN (macOS, where 'N' is a number)
+        Device to format.  Examples:
+          * /dev/sdx   (Linux, where 'x' is a letter) or
+          * /dev/diskN (macOS, where 'N' is a number)
 
     label
         Label to apply to formatted device.
@@ -181,14 +182,15 @@ Example:  ./format-udf.sh sdg "My UDF External Drive"
 ### Example usage
 On Ubuntu:
 ```
-user@computer:~$ ./format-udf.sh sdg "My UDF External Drive"
+user@computer:~$ ./format-udf.sh /dev/sdg "My UDF External Drive"
 [+] Validating arguments...
 [+] Testing dependencies...
-[+] Looking for drive info tool... using /sbin/blockdev
+[+] Looking for drive detail tool... using /sbin/blockdev
 [+] Looking for drive listing tool... using /sbin/blockdev
+[+] Looking for drive info tool... using /bin/lsblk
 [+] Looking for drive summary tool... using /sbin/blkid
 [+] Looking for unmount tool... using /bin/umount
-[+] Looking for UDF tool... using /usr/bin/mkudffs
+[+] Looking for UDF tool... using /usr/sbin/mkudffs
 [+] Detecting logical block size...
 [sudo] password for user:
 [*] Detected logical block size of 512
@@ -199,14 +201,13 @@ user@computer:~$ ./format-udf.sh sdg "My UDF External Drive"
 [+] Validating file system block size...
 [*] Using file system block size of 512
 [+] Detecting total size...
-[*] Detected total size of 31040995328
+[*] Detected total size of 8019509248
 [+] Validating detected total size...
 [+] Gathering drive information...
-/dev/sdg: UUID="41A4EE1A20286d61" LABEL="Old Drive" TYPE="udf" PTTYPE="dos"
+/dev/sdg: LABEL="Old Drive" UUID="4843-D1BD" TYPE="vfat"
 
 RO    RA   SSZ   BSZ   StartSec            Size   Device
-rw   256   512  4096          0     31040995328   /dev/sdg
-rw   256   512   512          0     31040995328   /dev/sdg1
+rw   256   512   512          0      8019509248   /dev/sdg
 The above-listed device (and partitions, if any) will be completely erased.
 Type 'yes' if this is what you intend:  yes
 [+] Unmounting device...
@@ -214,27 +215,36 @@ umount: /dev/sdg: not mounted
 [+] Zeroing out first chunk of device...
 4096+0 records in
 4096+0 records out
-2097152 bytes (2.1 MB, 2.0 MiB) copied, 0.240331 s, 8.7 MB/s
+2097152 bytes (2.1 MB, 2.0 MiB) copied, 0.450716 s, 4.7 MB/s
 [+] Formatting /dev/sdg ...
-start=0, blocks=64, type=RESERVED
-start=64, blocks=12, type=VRS
-start=76, blocks=180, type=USPACE
-start=256, blocks=1, type=ANCHOR
-start=257, blocks=16, type=PVDS
-start=273, blocks=1, type=LVID
-start=274, blocks=60626413, type=PSPACE
-start=60626687, blocks=1, type=ANCHOR
-start=60626688, blocks=239, type=USPACE
-start=60626927, blocks=16, type=RVDS
-start=60626943, blocks=1, type=ANCHOR
+filename=/dev/sdg
+label=My UDF External Drive
+uuid=5e4924cc17b50769
+blocksize=512
+blocks=15663104
+udfrev=2.01
+start=0, blocks=64, type=ERASE 
+start=64, blocks=13, type=VRS 
+start=77, blocks=19, type=ERASE 
+start=96, blocks=16, type=MVDS 
+start=112, blocks=16, type=ERASE 
+start=128, blocks=16, type=LVID 
+start=144, blocks=112, type=ERASE 
+start=256, blocks=1, type=ANCHOR 
+start=257, blocks=15662590, type=PSPACE 
+start=15662847, blocks=1, type=ANCHOR 
+start=15662848, blocks=96, type=ERASE 
+start=15662944, blocks=16, type=RVDS 
+start=15662960, blocks=143, type=ERASE 
+start=15663103, blocks=1, type=ANCHOR 
 [+] Writing fake MBR...
 16+0 records in
 16+0 records out
-16 bytes copied, 0.0219986 s, 0.7 kB/s
+16 bytes copied, 0.0037039 s, 4.3 kB/s
 2+0 records in
 2+0 records out
-2 bytes copied, 0.000358472 s, 5.6 kB/s
-[+] Successfully formatted /dev/sdg: UUID="59467176LinuxUDF" LABEL="My UDF External Drive" TYPE="udf" PTTYPE="dos"
+2 bytes copied, 3.7193e-05 s, 53.8 kB/s
+[+] Successfully formatted /dev/sdg: UUID="5e4924cc17b50769" LABEL="My UDF External Drive" TYPE="udf" PTTYPE="dos"
 Please disconnect/reconnect your drive now.
 ```
 

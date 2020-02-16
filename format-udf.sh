@@ -111,9 +111,9 @@ Usage:  $0 [-b BLOCK_SIZE] [-f] [-p PARTITION_TYPE] [-w WIPE_METHOD] device labe
         Note:  'zero' and 'scrub' methods will take a long time.
 
     device
-        Device to format.  Should be of the form:
-          * sdx   (Linux, where 'x' is a letter) or
-          * diskN (macOS, where 'N' is a number)
+        Device to format.  Examples:
+          * /dev/sdx   (Linux, where 'x' is a letter) or
+          * /dev/diskN (macOS, where 'N' is a number)
 
     label
         Label to apply to formatted device.
@@ -199,14 +199,14 @@ function entire_disk_partition_entry {
 }
 
 
-# Prints message assuring user that $DEVICE has not been changed
+# Prints message assuring user that $DEVICE_PATH has not been changed
 # Arguments:
 #   Device
 # Returns:
 #   None
 function exit_with_no_changes {
-    if [[ -n "$DEVICE" ]]; then
-        echo "[*] Exiting without changes to /dev/$DEVICE"
+    if [[ -n "$DEVICE_PATH" ]]; then
+        echo "[*] Exiting without changes to $DEVICE_PATH"
     fi
 }
 
@@ -302,61 +302,42 @@ if [[ $# -ne 2 ]]; then
 fi
 
 # setup variables for arguments
-DEVICE=$1
+DEVICE_ARG=$1
 LABEL=$2
 
-# validate device identifier (may be partition)
-(echo "$DEVICE" | grep -Eq '^(([hs]d[a-z])([1-9][0-9]*)?|(nvme[0-9]+n1)(p[1-9][0-9]*)?|(disk[0-9]+)(s[1-9][0-9]*)?|(loop[0-9]+))$') || (echo "[-] <device> is of invalid form" >&2; false)
+# if DEVICE_ARG doesn't appear to be an absolute path, prepend '/dev/' prefix
+if echo "$DEVICE_ARG" | grep -q '^/'; then
+    DEVICE_PATH=$DEVICE_ARG
+else
+    DEVICE_PATH=/dev/$DEVICE_ARG
+fi
 
 # verify this is a device, not just a file
 # `true` is so that a failure here doesn't cause entire script to exit prematurely
-mount "/dev/$DEVICE" 2>/dev/null || true
-[[ -b "/dev/$DEVICE" ]] || (echo "[-] /dev/$DEVICE either doesn't exist or is not block special" >&2; false)
+mount "$DEVICE_PATH" 2>/dev/null || true
+[[ -b "$DEVICE_PATH" ]] || (echo "[-] $DEVICE_PATH either doesn't exist or is not block special" >&2; false)
+
+# resolve device symlinks.  this permits use on virtual block devices with Linux device mapper.
+KERNEL_NAME=$(uname -s)
+if [[ "$KERNEL_NAME" = "Linux" ]]; then
+    KDEVICE_PATH=$(readlink -f "$DEVICE_PATH")
+elif [[ "$KERNEL_NAME" = "Darwin" ]]; then
+    KDEVICE_PATH=$(readlink "$DEVICE_PATH")
+else
+    echo "[-] Internal error 1" >&2
+    exit 1
+fi
+
+# verify this is a device, not just a file
+# `true` is so that a failure here doesn't cause entire script to exit prematurely
+mount "$KDEVICE_PATH" 2>/dev/null || true
+[[ -b "$KDEVICE_PATH" ]] || (echo "[-] $KDEVICE_PATH either doesn't exist or is not block special" >&2; false)
+
+# remove '/dev/' prefix for use in this script
+KDEVICE=${KDEVICE_PATH#/dev/}
 
 # provide assuring exit message when exiting before making changes to the drive
 trap exit_with_no_changes EXIT
-
-
-###############################################################################
-# validate parent device
-###############################################################################
-
-# extract parent device identifier
-if sed --version &> /dev/null; then
-    # this box has GNU sed ('-r' for extended regex)
-    PARENT_DEVICE=$(echo "$DEVICE" | sed -r 's/^(([hs]d[a-z])([1-9][0-9]*)?|(nvme[0-9]+n1)(p[1-9][0-9]*)?|(disk[0-9]+)(s[1-9][0-9]*)?|(loop[0-9]+))$/\2\4\6\8/')
-else
-    # this machine must have BSD sed ('-E' for extended regex)
-    PARENT_DEVICE=$(echo "$DEVICE" | sed -E 's/^(([hs]d[a-z])([1-9][0-9]*)?|(nvme[0-9]+n1)(p[1-9][0-9]*)?|(disk[0-9]+)(s[1-9][0-9]*)?|(loop[0-9]+))$/\2\4\6\8/')
-fi
-
-# validate parent device identifier (must be entire device)
-(echo "$PARENT_DEVICE" | grep -Eq '^([hs]d[a-z]|nvme[0-9]+n1|disk[0-9]+|loop[0-9]+)$') || (echo "[-] <device> is of invalid form (invalid parent device)" >&2; false)
-
-# verify parent is a device, not just a file
-[[ -b /dev/$PARENT_DEVICE ]] || (echo "[-] /dev/$PARENT_DEVICE either doesn't exist or is not block special" >&2; false)
-
-# validate configuration
-if [[ "$PARENT_DEVICE" != "$DEVICE" ]]; then
-    if [[ "$PARTITION_TYPE" != "none" ]]; then
-        echo "[-] You are attempting to format a single partition (as opposed to entire device)." >&2
-        echo "[-] Partition type '$PARTITION_TYPE' incompatible with single partition formatting." >&2
-        echo "[-] Please specify an entire device or partition type of 'none'." >&2
-        exit 1
-    fi
-
-    echo "You are attempting to format a single partition (as opposed to entire device)."
-    echo "For maximal compatibility, the recommendation is to format the entire device."
-    echo "If you continue, the resultant UDF partition will not be recognized on macOS."
-
-    if [[ -z $FORCE ]]; then
-        read -rp "Type 'yes' if you would like to continue anyway:  " YES_CASE
-        YES=$(echo "$YES_CASE" | tr '[:upper:]' '[:lower:]')
-        if [[ $YES != "yes" ]]; then
-            exit 1
-        fi
-    fi
-fi
 
 
 ###############################################################################
@@ -381,22 +362,22 @@ if ! hash cat 2>/dev/null ||
 fi
 
 
-# ensure have required drive info tool
-echo -n "[+] Looking for drive info tool..."
+# ensure have required drive detail tool
+echo -n "[+] Looking for drive detail tool..."
 # `true` is so that a failure here doesn't cause entire script to exit prematurely
 TOOL_BLOCKDEV=$(command -v blockdev 2>/dev/null) || true
 # `true` is so that a failure here doesn't cause entire script to exit prematurely
 TOOL_IOREG=$(command -v ioreg 2>/dev/null) || true
 if [[ -x "$TOOL_BLOCKDEV" ]]; then
-    TOOL_DRIVE_INFO=$TOOL_BLOCKDEV
+    TOOL_DRIVE_DETAIL=$TOOL_BLOCKDEV
 elif [[ -x "$TOOL_IOREG" ]]; then
-    TOOL_DRIVE_INFO=$TOOL_IOREG
+    TOOL_DRIVE_DETAIL=$TOOL_IOREG
 else
     echo
     echo "[-] Dependencies unmet.  Please verify that at least one of the following are installed, executable, and in the PATH:  blockdev, ioreg" >&2
     exit 1
 fi
-echo " using $TOOL_DRIVE_INFO"
+echo " using $TOOL_DRIVE_DETAIL"
 
 
 # ensure have required drive listing tool
@@ -417,7 +398,25 @@ fi
 echo " using $TOOL_DRIVE_LISTING"
 
 
-# ensure have required drive summary tool
+# ensure have required drive info tool
+echo -n "[+] Looking for drive info tool..."
+# `true` is so that a failure here doesn't cause entire script to exit prematurely
+TOOL_LSBLK=$(command -v lsblk 2>/dev/null) || true
+# `true` is so that a failure here doesn't cause entire script to exit prematurely
+TOOL_DISKUTIL=$(command -v diskutil 2>/dev/null) || true
+if [[ -x "$TOOL_LSBLK" ]]; then
+    TOOL_DRIVE_INFO=$TOOL_LSBLK
+elif [[ -x "$TOOL_DISKUTIL" ]]; then
+    TOOL_DRIVE_INFO=$TOOL_DISKUTIL
+else
+    echo
+    echo "[-] Dependencies unmet.  Please verify that at least one of the following are installed, executable, and in the PATH:  lsblk, diskutil" >&2
+    exit 1
+fi
+echo " using $TOOL_DRIVE_INFO"
+
+
+# ensure have drive summary tool
 echo -n "[+] Looking for drive summary tool..."
 # `true` is so that a failure here doesn't cause entire script to exit prematurely
 TOOL_BLKID=$(command -v blkid 2>/dev/null) || true
@@ -468,16 +467,52 @@ echo " using $TOOL_UDF"
 
 
 ###############################################################################
+# determine whether device is part or whole
+###############################################################################
+
+if [[ $TOOL_DRIVE_INFO = "$TOOL_LSBLK" ]]; then
+    IS_WHOLE=$(lsblk -alo KNAME,TYPE | grep "$KDEVICE" | awk '{print $2}' | grep -Eiq '(loop|disk)' && echo Yes || echo No)
+elif [[ $TOOL_DRIVE_INFO = "$TOOL_DISKUTIL" ]]; then
+    IS_WHOLE=$(diskutil info "$KDEVICE_PATH" | grep -i '^[ \t]*Whole:' | awk '{print $2}')
+else
+    echo "[-] Internal error 2" >&2
+    exit 1
+fi
+
+# is user attempting to format part?
+if [[ "${IS_WHOLE,,}" = "no" ]]; then
+    if [[ "$PARTITION_TYPE" != "none" ]]; then
+        echo "[-] You are attempting to format a single partition (as opposed to entire device)." >&2
+        echo "[-] Partition type '$PARTITION_TYPE' incompatible with single partition formatting." >&2
+        echo "[-] Please specify an entire device or partition type of 'none'." >&2
+        exit 1
+    fi
+
+    echo "You are attempting to format a single partition (as opposed to entire device)."
+    echo "For maximal compatibility, the recommendation is to format the entire device."
+    echo "If you continue, the resultant UDF partition will not be recognized on macOS."
+
+    if [[ -z $FORCE ]]; then
+        read -rp "Type 'yes' if you would like to continue anyway:  " YES_CASE
+        YES=$(echo "$YES_CASE" | tr '[:upper:]' '[:lower:]')
+        if [[ $YES != "yes" ]]; then
+            exit 1
+        fi
+    fi
+fi
+
+
+###############################################################################
 # gather information - logical block size
 ###############################################################################
 
 echo "[+] Detecting logical block size..."
 if [[ $TOOL_DRIVE_LISTING = "$TOOL_BLOCKDEV" ]]; then
-    LOGICAL_BLOCK_SIZE=$($SUDO blockdev --getss "/dev/$DEVICE")
+    LOGICAL_BLOCK_SIZE=$($SUDO blockdev --getss "$KDEVICE_PATH")
 elif [[ $TOOL_DRIVE_LISTING = "$TOOL_DISKUTIL" ]]; then
-    LOGICAL_BLOCK_SIZE=$(diskutil info "$DEVICE" | grep -i 'Device Block Size' | awk -F ':' '{print $2}' | awk '{print $1}')
+    LOGICAL_BLOCK_SIZE=$(diskutil info "$KDEVICE_PATH" | grep -i 'Device Block Size' | awk -F ':' '{print $2}' | awk '{print $1}')
 else
-    echo "[-] Internal error 1" >&2
+    echo "[-] Internal error 3" >&2
     exit 1
 fi
 
@@ -495,14 +530,14 @@ echo "[+] Validating detected logical block size..."
 ###############################################################################
 
 echo "[+] Detecting physical block size..."
-if [[ $TOOL_DRIVE_INFO = "$TOOL_BLOCKDEV" ]]; then
-    PHYSICAL_BLOCK_SIZE=$($SUDO blockdev --getpbsz "/dev/$DEVICE")
-elif [[ $TOOL_DRIVE_INFO = "$TOOL_IOREG" ]]; then
+if [[ $TOOL_DRIVE_DETAIL = "$TOOL_BLOCKDEV" ]]; then
+    PHYSICAL_BLOCK_SIZE=$($SUDO blockdev --getpbsz "$KDEVICE_PATH")
+elif [[ $TOOL_DRIVE_DETAIL = "$TOOL_IOREG" ]]; then
     # TODO - the 'Physical Block Size' item isn't always present.  find a more reliable method on macOS.
     # `true` is so that a failure here doesn't cause entire script to exit prematurely
-    PHYSICAL_BLOCK_SIZE=$(ioreg -c IOMedia -r -d 1 | tr '\n' '\0' | grep -Eao "\{\$[^\+]*$DEVICE.*?    \}\$" | tr '\0' '\n' | grep 'Physical Block Size' | awk '{print $5}') || true
+    PHYSICAL_BLOCK_SIZE=$(ioreg -c IOMedia -r -d 1 | tr '\n' '\0' | grep -Eao "\{\$[^\+]*$KDEVICE.*?    \}\$" | tr '\0' '\n' | grep 'Physical Block Size' | awk '{print $5}') || true
 else
-    echo "[-] Internal error 2" >&2
+    echo "[-] Internal error 4" >&2
     exit 1
 fi
 
@@ -571,11 +606,11 @@ echo "[*] Using file system block size of $FILE_SYSTEM_BLOCK_SIZE"
 
 echo "[+] Detecting total size..."
 if [[ $TOOL_DRIVE_LISTING = "$TOOL_BLOCKDEV" ]]; then
-    TOTAL_SIZE=$($SUDO blockdev --getsize64 "/dev/$DEVICE")
+    TOTAL_SIZE=$($SUDO blockdev --getsize64 "$KDEVICE_PATH")
 elif [[ $TOOL_DRIVE_LISTING = "$TOOL_DISKUTIL" ]]; then
-    TOTAL_SIZE=$(diskutil info "$DEVICE" | grep -Ei '(Total|Disk) Size' | awk -F ':' '{print $2}' | grep -Eoi '\([0-9]+ B' | sed 's/[^0-9]//g')
+    TOTAL_SIZE=$(diskutil info "$KDEVICE_PATH" | grep -Ei '(Total|Disk) Size' | awk -F ':' '{print $2}' | grep -Eoi '\([0-9]+ B' | sed 's/[^0-9]//g')
 else
-    echo "[-] Internal error 3" >&2
+    echo "[-] Internal error 5" >&2
     exit 1
 fi
 
@@ -610,13 +645,13 @@ fi
 
 echo "[+] Gathering drive information..."
 if [[ $TOOL_DRIVE_SUMMARY = "$TOOL_BLKID" ]] && [[ $TOOL_DRIVE_LISTING = "$TOOL_BLOCKDEV" ]]; then
-    $SUDO blkid -c /dev/null "/dev/$DEVICE" || true
-    cat "/sys/block/$PARENT_DEVICE/device/model" || true
-    $SUDO blockdev --report | grep -E "(Device|$DEVICE)"
+    $SUDO blkid -c /dev/null "$KDEVICE_PATH" || true
+    cat "/sys/block/$KDEVICE/device/model" || true
+    $SUDO blockdev --report | grep -E "(Device|$KDEVICE_PATH)"
 elif [[ $TOOL_DRIVE_LISTING = "$TOOL_DISKUTIL" ]]; then
-    diskutil list "$DEVICE"
+    diskutil list "$KDEVICE_PATH"
 else
-    echo "[-] Internal error 4" >&2
+    echo "[-] Internal error 6" >&2
     exit 1
 fi
 
@@ -638,12 +673,12 @@ fi
 echo "[+] Unmounting device..."
 if [[ $TOOL_UNMOUNT = "$TOOL_UMOUNT" ]]; then
     # `true` is so that a failure here doesn't cause entire script to exit prematurely
-    $SUDO umount "/dev/$DEVICE" || true
+    $SUDO umount "$KDEVICE_PATH" || true
 elif [[ $TOOL_UNMOUNT = "$TOOL_DISKUTIL" ]]; then
     # `true` is so that a failure here doesn't cause entire script to exit prematurely
-    $SUDO diskutil unmountDisk "/dev/$DEVICE" || true
+    $SUDO diskutil unmountDisk "$KDEVICE_PATH" || true
 else
-    echo "[-] Internal error 5" >&2
+    echo "[-] Internal error 7" >&2
     exit 1
 fi
 
@@ -661,14 +696,14 @@ case $WIPE_METHOD in
         ;;
     zero)
         echo "[+] Overwriting device with zeros.  This will likely take a LONG time..."
-        $SUDO dd if=/dev/zero of="/dev/$DEVICE" bs="$LOGICAL_BLOCK_SIZE" || true
+        $SUDO dd if=/dev/zero of="$KDEVICE_PATH" bs="$LOGICAL_BLOCK_SIZE" || true
         ;;
     scrub)
         echo "[+] Scrubbing device with random patterns.  This will likely take a LONG time..."
-        $SUDO scrub -f "/dev/$DEVICE"
+        $SUDO scrub -f "$KDEVICE_PATH"
         ;;
     *)
-        echo "[-] Internal error 6" >&2
+        echo "[-] Internal error 8" >&2
         exit 1
         ;;
 esac
@@ -680,14 +715,14 @@ esac
 
 echo "[+] Zeroing out first chunk of device..."
 # 4096 was arbitrarily chosen to be "big enough" to delete first chunk of device
-$SUDO dd if=/dev/zero of="/dev/$DEVICE" bs="$LOGICAL_BLOCK_SIZE" count=4096
+$SUDO dd if=/dev/zero of="$KDEVICE_PATH" bs="$LOGICAL_BLOCK_SIZE" count=4096
 
 
 ###############################################################################
 # format device
 ###############################################################################
 
-echo "[+] Formatting /dev/$DEVICE ..."
+echo "[+] Formatting $DEVICE_PATH ..."
 if [[ $TOOL_UDF = "$TOOL_MKUDFFS" ]]; then
     # --utf8       - encode file names in UTF8 (since pali/udftools@52afdce, this must be specified as the first argument)
     # --blocksize  - the size of blocks in bytes. should be the same as the drive's physical block size.
@@ -695,7 +730,7 @@ if [[ $TOOL_UDF = "$TOOL_MKUDFFS" ]]; then
     # --udfrev     - the udf revision to use.  2.01 is the latest revision available that supports writing in Linux.
     # --lvid       - logical volume identifier
     # --vid        - volume identifier
-    ($SUDO mkudffs --utf8 --blocksize="$FILE_SYSTEM_BLOCK_SIZE" --media-type=hd --udfrev=0x0201 --lvid="$LABEL" --vid="$LABEL" "/dev/$DEVICE") || (echo "[-] Format failed!" >&2; false)
+    ($SUDO mkudffs --utf8 --blocksize="$FILE_SYSTEM_BLOCK_SIZE" --media-type=hd --udfrev=0x0201 --lvid="$LABEL" --vid="$LABEL" "$KDEVICE_PATH") || (echo "[-] Format failed!" >&2; false)
 elif [[ $TOOL_UDF = "$TOOL_NEWFS_UDF" ]]; then
     # -b    - the size of blocks in bytes. should be the same as the drive's physical block size.
     # -m    - "blk" type covers both hard drives and USB drives
@@ -703,9 +738,9 @@ elif [[ $TOOL_UDF = "$TOOL_NEWFS_UDF" ]]; then
     # -r    - the udf revision to use.  2.01 is the latest revision available that supports writing in Linux.
     # -v    - volume identifier
     # --enc - encode volume name in UTF8
-    ($SUDO newfs_udf -b "$FILE_SYSTEM_BLOCK_SIZE" -m blk -t ow -r 2.01 -v "$LABEL" --enc utf8 "/dev/$DEVICE") || (echo "[-] Format failed!" >&2; false)
+    ($SUDO newfs_udf -b "$FILE_SYSTEM_BLOCK_SIZE" -m blk -t ow -r 2.01 -v "$LABEL" --enc utf8 "$KDEVICE_PATH") || (echo "[-] Format failed!" >&2; false)
 else
-    echo "[-] Internal error 7" >&2
+    echo "[-] Internal error 9" >&2
     exit 1
 fi
 
@@ -721,12 +756,12 @@ case $PARTITION_TYPE in
     mbr)
         echo "[+] Writing fake MBR..."
         # first block has already been zero'd.  start by writing the (only) partition entry at its correct offset.
-        entire_disk_partition_entry "$TOTAL_SIZE" "$LOGICAL_BLOCK_SIZE" | xxd -r -p | $SUDO dd of="/dev/$DEVICE" bs=1 seek=446 count=16
+        entire_disk_partition_entry "$TOTAL_SIZE" "$LOGICAL_BLOCK_SIZE" | xxd -r -p | $SUDO dd of="$KDEVICE_PATH" bs=1 seek=446 count=16
         # Boot signature at the end of the block
-        echo -n 55aa | xxd -r -p | $SUDO dd of="/dev/$DEVICE" bs=1 seek=510 count=2
+        echo -n 55aa | xxd -r -p | $SUDO dd of="$KDEVICE_PATH" bs=1 seek=510 count=2
         ;;
     *)
-        echo "[-] Internal error 8" >&2
+        echo "[-] Internal error 10" >&2
         exit 1
         ;;
 esac
@@ -738,7 +773,7 @@ esac
 
 # following call to blkid sometimes exits with failure, even though the device is formatted properly.
 # `true` is so that a failure here doesn't cause entire script to exit prematurely
-SUMMARY=$([[ $TOOL_DRIVE_SUMMARY = "$TOOL_BLKID" ]] && $SUDO blkid -c /dev/null "/dev/$DEVICE" 2>/dev/null) || true
+SUMMARY=$([[ $TOOL_DRIVE_SUMMARY = "$TOOL_BLKID" ]] && $SUDO blkid -c /dev/null "$KDEVICE_PATH" 2>/dev/null) || true
 echo "[+] Successfully formatted $SUMMARY"
 
 # TODO find a way to auto-mount (`$SUDO mount -a` doesn't work).  in the meantime...
