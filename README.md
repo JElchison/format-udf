@@ -250,11 +250,12 @@ Please disconnect/reconnect your drive now.
 
 On macOS:
 ```
-computer:~ user$ ./format-udf.sh disk2 "My UDF External Drive"
+computer:~ user$ ./format-udf.sh /dev/disk4 "My UDF External Drive"
 [+] Validating arguments...
 [+] Testing dependencies...
-[+] Looking for drive info tool... using /usr/sbin/ioreg
+[+] Looking for drive detail tool... using /usr/sbin/ioreg
 [+] Looking for drive listing tool... using /usr/sbin/diskutil
+[+] Looking for drive info tool... using /usr/sbin/diskutil
 [+] Looking for drive summary tool... using (none)
 [+] Looking for unmount tool... using /usr/sbin/diskutil
 [+] Looking for UDF tool... using /sbin/newfs_udf
@@ -265,31 +266,32 @@ computer:~ user$ ./format-udf.sh disk2 "My UDF External Drive"
 [+] Validating file system block size...
 [*] Using file system block size of 512
 [+] Detecting total size...
-[*] Detected total size of 31040995328
+[*] Detected total size of 8019509248
 [+] Validating detected total size...
 [+] Gathering drive information...
-/dev/disk2 (external, physical):
+/dev/disk4 (external, physical):
    #:                       TYPE NAME                    SIZE       IDENTIFIER
-   0:                            Old Drive              *31.0 GB    disk2
+   0:     FDisk_partition_scheme                        *8.0 GB     disk4
+   1:             Windows_FAT_32 Old Drive               8.0 GB     disk4s1
 The above-listed device (and partitions, if any) will be completely erased.
 Type 'yes' if this is what you intend:  yes
 [+] Unmounting device...
 Password:
-Unmount of all volumes on disk2 was successful
+Unmount of all volumes on disk4 was successful
 [+] Zeroing out first chunk of device...
 4096+0 records in
 4096+0 records out
-2097152 bytes transferred in 2.971664 secs (705716 bytes/sec)
-[+] Formatting /dev/disk2 ...
-write to block device: /dev/disk2  last written block address: 60626943
+2097152 bytes transferred in 3.113956 secs (673469 bytes/sec)
+[+] Formatting /dev/disk4 ...
+write to block device: /dev/disk4  last written block address: 15663103
 [+] Writing fake MBR...
 16+0 records in
 16+0 records out
-16 bytes transferred in 0.034208 secs (468 bytes/sec)
+16 bytes transferred in 0.000615 secs (26021 bytes/sec)
 2+0 records in
 2+0 records out
-2 bytes transferred in 0.002100 secs (952 bytes/sec)
-[+] Successfully formatted
+2 bytes transferred in 0.000644 secs (3106 bytes/sec)
+[+] Successfully formatted 
 Please disconnect/reconnect your drive now.
 ```
 
