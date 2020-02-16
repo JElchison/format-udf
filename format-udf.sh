@@ -322,7 +322,10 @@ KERNEL_NAME=$(uname -s)
 if [[ "$KERNEL_NAME" = "Linux" ]]; then
     KDEVICE_PATH=$(readlink -f "$DEVICE_PATH")
 elif [[ "$KERNEL_NAME" = "Darwin" ]]; then
-    KDEVICE_PATH=$(readlink "$DEVICE_PATH")
+    KDEVICE_PATH=$(readlink "$DEVICE_PATH") || true
+    if [[ -z "$KDEVICE_PATH" ]]; then
+        KDEVICE_PATH=$DEVICE_PATH
+    fi
 else
     echo "[-] Internal error 1" >&2
     exit 1
@@ -480,7 +483,7 @@ else
 fi
 
 # is user attempting to format part?
-if [[ "${IS_WHOLE,,}" = "no" ]]; then
+if [[ $(echo "$IS_WHOLE" | tr '[:upper:]' '[:lower:]') != "yes" ]]; then
     if [[ "$PARTITION_TYPE" != "none" ]]; then
         echo "[-] You are attempting to format a single partition (as opposed to entire device)." >&2
         echo "[-] Partition type '$PARTITION_TYPE' incompatible with single partition formatting." >&2
