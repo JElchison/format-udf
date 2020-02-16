@@ -265,7 +265,7 @@ while getopts ":b:fp:w:vh" opt; do
         v)
             echo "format-udf $VERSION"
             echo "https://github.com/JElchison/format-udf"
-            echo "Copyright (C) 2018 Jonathan Elchison <JElchison@gmail.com>"
+            echo "Copyright (C) 2020 Jonathan Elchison <JElchison@gmail.com>"
             exit 0
             ;;
         h)
