@@ -47,7 +47,7 @@ fi
 ###############################################################################
 
 # version of this script
-VERSION=1.7.1
+VERSION=1.8.0
 # maximum number of heads per cylinder
 HPC=255
 # maximum number of sectors per track
